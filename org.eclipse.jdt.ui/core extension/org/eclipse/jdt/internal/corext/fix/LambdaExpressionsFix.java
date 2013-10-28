@@ -15,6 +15,7 @@
 package org.eclipse.jdt.internal.corext.fix;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -39,6 +40,7 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.Statement;
+import org.eclipse.jdt.core.dom.VariableDeclaration;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite.ImportRewriteContext;
@@ -56,36 +58,42 @@ import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
 
 public class LambdaExpressionsFix extends CompilationUnitRewriteOperationsFix {
 
-	private static final class AnonymousClassCreationVisitor extends ASTVisitor {
+	private static final class FunctionalAnonymousClassFinder extends ASTVisitor {
 
-		private final ArrayList<ClassInstanceCreation> fNodes;
-
-		private AnonymousClassCreationVisitor(ArrayList<ClassInstanceCreation> nodes) {
-			fNodes= nodes;
+		private final ArrayList<ClassInstanceCreation> fNodes= new ArrayList<ClassInstanceCreation>();
+		
+		static ArrayList<ClassInstanceCreation> perform(ASTNode node) {
+			FunctionalAnonymousClassFinder finder= new FunctionalAnonymousClassFinder();
+			node.accept(finder);
+			return finder.fNodes;
 		}
-
-		@Override
-		public boolean visit(ClassInstanceCreation node) {
+		
+		static boolean isFunctionalAnonymous(ClassInstanceCreation node) {
 			ITypeBinding typeBinding= node.resolveTypeBinding();
 			if (typeBinding == null)
-				return true;
+				return false;
 			ITypeBinding[] interfaces= typeBinding.getInterfaces();
 			if (interfaces.length != 1)
-				return true;
+				return false;
 			if (!interfaces[0].isFunctionalInterface())
-				return true;
+				return false;
 
-			final AnonymousClassDeclaration anonymTypeDecl= node.getAnonymousClassDeclaration();
+			AnonymousClassDeclaration anonymTypeDecl= node.getAnonymousClassDeclaration();
 			if (anonymTypeDecl == null || anonymTypeDecl.resolveBinding() == null) {
-				return true;
+				return false;
 			}
 			List<BodyDeclaration> bodyDeclarations= anonymTypeDecl.bodyDeclarations();
 			int size= bodyDeclarations.size();
 			if (size != 1) //cannot convert if there is are fields or additional methods from Object class
-				return true;
-
-			fNodes.add(node);
-
+				return false;
+			return true;
+		}
+		
+		@Override
+		public boolean visit(ClassInstanceCreation node) {
+			if (isFunctionalAnonymous(node)) {
+				fNodes.add(node);
+			}
 			return true;
 		}
 	}
@@ -110,9 +118,9 @@ public class LambdaExpressionsFix extends CompilationUnitRewriteOperationsFix {
 
 	private static class CreateLambdaOperation extends CompilationUnitRewriteOperation {
 
-		private final ArrayList<ClassInstanceCreation> fExpressions;
+		private final List<ClassInstanceCreation> fExpressions;
 
-		public CreateLambdaOperation(ArrayList<ClassInstanceCreation> expressions) {
+		public CreateLambdaOperation(List<ClassInstanceCreation> expressions) {
 			fExpressions= expressions;
 		}
 
@@ -172,9 +180,9 @@ public class LambdaExpressionsFix extends CompilationUnitRewriteOperationsFix {
 
 	private static class CreateAnonymousClassCreationOperation extends CompilationUnitRewriteOperation {
 
-		private final ArrayList<LambdaExpression> fExpressions;
+		private final List<LambdaExpression> fExpressions;
 
-		public CreateAnonymousClassCreationOperation(ArrayList<LambdaExpression> changedNodes) {
+		public CreateAnonymousClassCreationOperation(List<LambdaExpression> changedNodes) {
 			fExpressions= changedNodes;
 		}
 
@@ -194,12 +202,18 @@ public class LambdaExpressionsFix extends CompilationUnitRewriteOperationsFix {
 
 				ITypeBinding lambdaTypeBinding= lambdaExpression.resolveTypeBinding();
 				IMethodBinding methodBinding= lambdaTypeBinding.getDeclaredMethods()[0];
+				List<VariableDeclaration> parameters= lambdaExpression.parameters();
+				String[] parameterNames= new String[parameters.size()];
+				for (int i= 0; i < parameterNames.length; i++) {
+					parameterNames[i]= parameters.get(i).getName().getIdentifier();
+				}
 
 				final CodeGenerationSettings settings= JavaPreferencesSettings.getCodeGenerationSettings(cuRewrite.getCu().getJavaProject());
 				ImportRewrite importRewrite= cuRewrite.getImportRewrite();
 				ImportRewriteContext importContext= new ContextSensitiveImportRewriteContext(cuRewrite.getRoot(), importRewrite);
+				
 				MethodDeclaration methodDeclaration= StubUtility2.createImplementationStub(cuRewrite.getCu(), rewrite, importRewrite, importContext,
-						methodBinding, lambdaTypeBinding.getName(), settings, false);
+						methodBinding, parameterNames, lambdaTypeBinding.getName(), settings, false);
 
 				Block block;
 				ASTNode lambdaBody= lambdaExpression.getBody();
@@ -226,7 +240,7 @@ public class LambdaExpressionsFix extends CompilationUnitRewriteOperationsFix {
 				bodyDeclarations.add(methodDeclaration);
 
 				ClassInstanceCreation classInstanceCreation= ast.newClassInstanceCreation();
-				classInstanceCreation.setType(ast.newSimpleType(ast.newName(lambdaTypeBinding.getName())));
+				classInstanceCreation.setType(importRewrite.addImport(lambdaTypeBinding, ast, importContext));
 				classInstanceCreation.setAnonymousClassDeclaration(anonymousClassDeclaration);
 
 				rewrite.replace(lambdaExpression, classInstanceCreation, group);
@@ -234,33 +248,27 @@ public class LambdaExpressionsFix extends CompilationUnitRewriteOperationsFix {
 		}
 	}
 
-	public static LambdaExpressionsFix createConvertToLambdaFix(CompilationUnit compilationUnit, ASTNode[] nodes) {
-		if (!JavaModelUtil.is18OrHigher(compilationUnit.getJavaElement().getJavaProject()))
+	public static LambdaExpressionsFix createConvertToLambdaFix(ClassInstanceCreation cic) {
+		CompilationUnit root= (CompilationUnit) cic.getRoot();
+		if (!JavaModelUtil.is18OrHigher(root.getJavaElement().getJavaProject()))
 			return null;
 
-		final ArrayList<ClassInstanceCreation> changedNodes= new ArrayList<ClassInstanceCreation>();
-		for (int i= 0; i < nodes.length; i++) {
-			nodes[i].accept(new AnonymousClassCreationVisitor(changedNodes));
-		}
-		if (changedNodes.isEmpty())
+		if (!FunctionalAnonymousClassFinder.isFunctionalAnonymous(cic))
 			return null;
 
-		CreateLambdaOperation op= new CreateLambdaOperation(changedNodes);
-		return new LambdaExpressionsFix(FixMessages.LambdaExpressionsFix_convert_to_lambda_expression, compilationUnit, new CompilationUnitRewriteOperation[] { op });
+		CreateLambdaOperation op= new CreateLambdaOperation(Collections.singletonList(cic));
+		return new LambdaExpressionsFix(FixMessages.LambdaExpressionsFix_convert_to_lambda_expression, root, new CompilationUnitRewriteOperation[] { op });
 	}
 
-	public static IProposableFix createConvertToAnonymousClassCreationsFix(CompilationUnit compilationUnit, ASTNode[] nodes) {
+	public static IProposableFix createConvertToAnonymousClassCreationsFix(LambdaExpression lambda) {
 		// offer the quick assist at pre 1.8 levels as well to get rid of the compilation error (TODO: offer this as a quick fix in that case)
 
-		final ArrayList<LambdaExpression> changedNodes= new ArrayList<LambdaExpression>();
-		for (int i= 0; i < nodes.length; i++) {
-			nodes[i].accept(new LambdaExpressionVisitor(changedNodes));
-		}
-		if (changedNodes.isEmpty())
+		if (lambda.resolveTypeBinding() == null)
 			return null;
 
-		CreateAnonymousClassCreationOperation op= new CreateAnonymousClassCreationOperation(changedNodes);
-		return new LambdaExpressionsFix(FixMessages.LambdaExpressionsFix_convert_to_anonymous_class_creation, compilationUnit, new CompilationUnitRewriteOperation[] { op });
+		CreateAnonymousClassCreationOperation op= new CreateAnonymousClassCreationOperation(Collections.singletonList(lambda));
+		CompilationUnit root= (CompilationUnit) lambda.getRoot();
+		return new LambdaExpressionsFix(FixMessages.LambdaExpressionsFix_convert_to_anonymous_class_creation, root, new CompilationUnitRewriteOperation[] { op });
 	}
 
 	public static ICleanUpFix createCleanUp(CompilationUnit compilationUnit, boolean useLambda) {
@@ -268,13 +276,11 @@ public class LambdaExpressionsFix extends CompilationUnitRewriteOperationsFix {
 			return null;
 
 		if (useLambda) {
-			final ArrayList<ClassInstanceCreation> changedNodes= new ArrayList<ClassInstanceCreation>();
-			compilationUnit.accept(new AnonymousClassCreationVisitor(changedNodes));
-
-			if (changedNodes.isEmpty())
+			ArrayList<ClassInstanceCreation> convertibleNodes= FunctionalAnonymousClassFinder.perform(compilationUnit);
+			if (convertibleNodes.isEmpty())
 				return null;
 
-			CompilationUnitRewriteOperation op= new CreateLambdaOperation(changedNodes);
+			CompilationUnitRewriteOperation op= new CreateLambdaOperation(convertibleNodes);
 			return new LambdaExpressionsFix(FixMessages.LambdaExpressionsFix_convert_to_lambda_expression, compilationUnit, new CompilationUnitRewriteOperation[] { op });
 		}
 		return null;
