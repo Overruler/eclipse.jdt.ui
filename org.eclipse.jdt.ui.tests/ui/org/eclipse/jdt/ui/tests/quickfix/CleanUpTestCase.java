@@ -5,6 +5,10 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  *
+ * This is an implementation of an early-draft specification developed under the Java
+ * Community Process (JCP) and is made available for testing and evaluation purposes
+ * only. The code is not compatible with any specification of the JCP.
+ *
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
@@ -41,6 +45,7 @@ import org.eclipse.ltk.core.refactoring.PerformChangeOperation;
 import org.eclipse.ltk.core.refactoring.RefactoringCore;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
+import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
@@ -116,7 +121,7 @@ public class CleanUpTestCase extends QuickFixTest {
 		corePrefs.setValue(JavaCore.CODEASSIST_FIELD_SUFFIXES, "");
 		corePrefs.setValue(JavaCore.CODEASSIST_STATIC_FIELD_SUFFIXES, "");
 
-		fJProject1= ProjectTestSetup.getProject();
+		fJProject1= getProject();
 
 		fSourceFolder= JavaProjectHelper.addSourceContainer(fJProject1, "src");
 
@@ -129,11 +134,19 @@ public class CleanUpTestCase extends QuickFixTest {
 	}
 
 	protected void tearDown() throws Exception {
-		JavaProjectHelper.clear(fJProject1, ProjectTestSetup.getDefaultClasspath());
+		JavaProjectHelper.clear(fJProject1, getDefaultClasspath());
 		disableAll();
 		fJProject1= null;
 		fSourceFolder= null;
 		fProfile= null;
+	}
+
+	protected IJavaProject getProject() {
+		return ProjectTestSetup.getProject();
+	}
+
+	protected IClasspathEntry[] getDefaultClasspath() throws CoreException {
+		return ProjectTestSetup.getDefaultClasspath();
 	}
 
 	private void disableAll() throws CoreException {
