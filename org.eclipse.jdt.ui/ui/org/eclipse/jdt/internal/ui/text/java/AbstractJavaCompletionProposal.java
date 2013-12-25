@@ -6,6 +6,7 @@
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
+ *     Timo Kinnunen - Contributions for bug 377373 - [subwords] known limitations with JDT 3.8
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.text.java;
@@ -85,6 +86,7 @@ import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.compiler.CharOperation;
+import org.eclipse.jdt.core.search.SearchPattern;
 
 import org.eclipse.jdt.internal.corext.javadoc.JavaDocLocations;
 
@@ -840,6 +842,7 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 
 	/**
 	 * Case insensitive comparison of <code>prefix</code> with the start of <code>string</code>.
+	 * The comparison may involve camel-case matching or other comparison algorithms.
 	 *
 	 * @param prefix the prefix
 	 * @param string  the string to look for the prefix
@@ -849,10 +852,7 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 	 * @since 3.2
 	 */
 	protected boolean isPrefix(String prefix, String string) {
-		if (prefix == null || string ==null || prefix.length() > string.length())
-			return false;
-		String start= string.substring(0, prefix.length());
-		return start.equalsIgnoreCase(prefix) || isCamelCaseMatching() && CharOperation.camelCaseMatch(prefix.toCharArray(), string.toCharArray());
+		return SearchPattern.isSimpleTypeNameMatch(prefix, string);
 	}
 
 	/**
