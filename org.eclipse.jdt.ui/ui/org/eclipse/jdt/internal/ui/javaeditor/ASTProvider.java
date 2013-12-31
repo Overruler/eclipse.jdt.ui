@@ -454,11 +454,12 @@ public final class ASTProvider {
 		if (isReconciling) {
 			try {
 				// Wait for AST
+				// This wait happens on the UI thread so it must be kept short, this is done by emulating a spurious wakeup
 				synchronized (fWaitLock) {
 					if (isReconciling(input)) {
 						if (DEBUG)
 							System.out.println(getThreadName() + " - " + DEBUG_PREFIX + "waiting for AST for: " + input.getElementName()); //$NON-NLS-1$ //$NON-NLS-2$
-						fWaitLock.wait();
+						fWaitLock.wait(500);
 					}
 				}
 
