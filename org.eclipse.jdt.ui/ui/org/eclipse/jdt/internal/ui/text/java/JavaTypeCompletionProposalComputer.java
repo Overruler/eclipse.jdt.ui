@@ -62,6 +62,9 @@ public class JavaTypeCompletionProposalComputer extends JavaCompletionProposalCo
 	public List<ICompletionProposal> computeCompletionProposals(ContentAssistInvocationContext context, IProgressMonitor monitor) {
 		List<ICompletionProposal> types= super.computeCompletionProposals(context, monitor);
 
+		if (!canComputeCorrectRelevances())
+			return types;
+		
 		if (!(context instanceof JavaContentAssistInvocationContext))
 			return types;
 
@@ -112,6 +115,10 @@ public class JavaTypeCompletionProposalComputer extends JavaCompletionProposalCo
 		}
 
 		return types;
+	}
+
+	private boolean canComputeCorrectRelevances() {
+		return false;
 	}
 
 	private IJavaCompletionProposal createTypeProposal(int relevance, String fullyQualifiedType, JavaContentAssistInvocationContext context) throws JavaModelException {
