@@ -38,5 +38,5 @@ Require-Bundle:
  org.eclipse.ui.ide,
  org.eclipse.ui.workbench.texteditor,
  org.junit;bundle-version="4.8.2"
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Eclipse-BundleShape: dir
