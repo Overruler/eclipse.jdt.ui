@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2012 IBM Corporation and others.
+ * Copyright (c) 2000, 2014 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -7,6 +7,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Timo Kinnunen <timo.kinnunen@gmail.com> - Bug 428139 [extract local] Extract local variable should be possible without selection
  *******************************************************************************/
 
 package org.eclipse.jdt.internal.ui.text.correction;
@@ -101,6 +102,7 @@ public class CorrectionCommandHandler extends AbstractHandler {
 			if (id.equals(LinkedNamesAssistProposal.ASSIST_ID)) {
 				return getLocalRenameProposal(context); // shortcut for local rename
 			}
+			context.setCommands(id);
 			JavaCorrectionProcessor.collectAssists(context, new ProblemLocation[0], proposals);
 		} else {
 			try {
