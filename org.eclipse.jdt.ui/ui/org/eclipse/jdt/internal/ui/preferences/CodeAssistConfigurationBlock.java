@@ -71,6 +71,7 @@ class CodeAssistConfigurationBlock extends OptionsConfigurationBlock {
 	private static final Key PREF_CODEASSIST_PREFIX_COMPLETION= getJDTUIKey(PreferenceConstants.CODEASSIST_PREFIX_COMPLETION);
 	private static final Key PREF_CODEASSIST_DEPRECATION_CHECK= getJDTCoreKey(JavaCore.CODEASSIST_DEPRECATION_CHECK);
 	private static final Key PREF_CODEASSIST_CAMEL_CASE_MATCH= getJDTCoreKey(JavaCore.CODEASSIST_CAMEL_CASE_MATCH);
+	private static final Key PREF_CODEASSIST_EXPERIMENTAL_FORCE_LATEST_JDK= getJDTCoreKey(JavaCore.CORE_EXPERIMENTAL_FORCE_LATEST_JDK_COMPLIANCE);
 
 	private static Key[] getAllKeys() {
 		return new Key[] {
@@ -127,6 +128,9 @@ class CodeAssistConfigurationBlock extends OptionsConfigurationBlock {
 
 		composite= createSubsection(control, PreferencesMessages.CodeAssistConfigurationBlock_autoactivationSection_title);
 		addAutoActivationSection(composite);
+
+		composite= createSubsection(control, PreferencesMessages.CodeAssistConfigurationBlock_experimentalSection_title);
+		addExperimentalSection(composite);
 
 		initialize();
 
@@ -305,6 +309,12 @@ class CodeAssistConfigurationBlock extends OptionsConfigurationBlock {
 
 		label= PreferencesMessages.JavaEditorPreferencePage_autoActivationTriggersForJavaDoc;
 		addLabelledTextField(composite, label, PREF_CODEASSIST_AUTOACTIVATION_TRIGGERS_JAVADOC, 100, 4, 20);
+	}
+
+	private void addExperimentalSection(Composite composite) {
+		String label;
+		label= PreferencesMessages.CodeAssistConfigurationBlock_experimental_force_latest_jdk;
+		addCheckBox(composite, label, PREF_CODEASSIST_EXPERIMENTAL_FORCE_LATEST_JDK, enabledDisabled, 0);
 	}
 
 

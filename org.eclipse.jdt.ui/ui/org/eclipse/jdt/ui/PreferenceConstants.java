@@ -3128,6 +3128,18 @@ public class PreferenceConstants {
 	public static final String SEARCH_USE_REDUCED_MENU= "Search.usereducemenu"; //$NON-NLS-1$
 
 	/**
+	 * A named preference that controls whether to override other settings to use latest known JDK compliance.
+	 * <p>
+	 * Value is of type <code>Boolean</code>.
+	 * </p>
+	 * <p>
+	 * Note: this is work in progress and may change any time
+	 * </p>
+	 * @since 3.9
+	 */
+	public static final String EXPERIMENTAL_FORCE_LATEST_JDK= "Experimental.forcelatestjdk"; //$NON-NLS-1$
+
+	/**
 	 * A named preference that controls if the Java Browsing views are linked to the active editor.
 	 * <p>
 	 * Value is of type <code>Boolean</code>.
@@ -3661,6 +3673,8 @@ public class PreferenceConstants {
 		store.setDefault(PreferenceConstants.LINK_BROWSING_MEMBERS_TO_EDITOR, true);
 
 		store.setDefault(PreferenceConstants.SEARCH_USE_REDUCED_MENU, true);
+
+		store.setDefault(PreferenceConstants.EXPERIMENTAL_FORCE_LATEST_JDK, false);
 
 		// AppearancePreferencePage
 		store.setDefault(PreferenceConstants.APPEARANCE_COMPRESS_PACKAGE_NAMES, false);
