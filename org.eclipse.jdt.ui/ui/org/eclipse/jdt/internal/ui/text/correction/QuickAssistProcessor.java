@@ -6,6 +6,7 @@
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
+ *     Timo Kinnunen <timo.kinnunen@gmail.com> - Bug 428139 [extract local] Extract local variable should be possible without selection
  *     IBM Corporation - initial API and implementation
  *     Sebastian Davids <sdavids@gmx.de> - Bug 37432 getInvertEqualsProposal
  *     Benjamin Muskalla <b.muskalla@gmx.net> - Bug 36350 convertToStringBufferPropsal
@@ -256,8 +257,9 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 	}
 
 	public IJavaCompletionProposal[] getAssists(IInvocationContext context, IProblemLocation[] locations) throws CoreException {
+		context= findSelectionForLine(context);
 		ASTNode coveringNode= context.getCoveringNode();
-		if (coveringNode != null) {
+		while (coveringNode != null) {
 			ArrayList<ASTNode> coveredNodes= AdvancedQuickAssistProcessor.getFullyCoveredNodes(context, coveringNode);
 			ArrayList<ICommandAccess> resultingCollections= new ArrayList<ICommandAccess>();
 			boolean noErrorsAtLocation= noErrorsAtLocation(locations);
@@ -269,6 +271,9 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 			getAssignParamToFieldProposals(context, coveringNode, resultingCollections);
 			getInferDiamondArgumentsProposal(context, coveringNode, locations, resultingCollections);
 			getGenerateForLoopProposals(context, coveringNode, locations, resultingCollections);
+			// for consistency: dialog versions of extract & inline can handle code with errors
+			getExtractVariableProposal(context, !noErrorsAtLocation || locations.length != 0, resultingCollections);
+			getInlineLocalProposal(context, coveringNode, resultingCollections);
 
 			if (noErrorsAtLocation) {
 				boolean problemsAtLocation= locations.length != 0;
@@ -285,9 +290,7 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 				getInvertEqualsProposal(context, coveringNode, resultingCollections);
 				getArrayInitializerToArrayCreation(context, coveringNode, resultingCollections);
 				getCreateInSuperClassProposals(context, coveringNode, resultingCollections);
-				getExtractVariableProposal(context, problemsAtLocation, resultingCollections);
 				getExtractMethodProposal(context, coveringNode, problemsAtLocation, resultingCollections);
-				getInlineLocalProposal(context, coveringNode, resultingCollections);
 				getConvertLocalToFieldProposal(context, coveringNode, resultingCollections);
 				getConvertAnonymousToNestedProposal(context, coveringNode, resultingCollections);
 				getConvertAnonymousClassCreationsToLambdaProposals(context, coveringNode, resultingCollections);
@@ -305,9 +308,48 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 				getConvertStringConcatenationProposals(context, resultingCollections);
 				getMissingCaseStatementProposals(context, coveringNode, resultingCollections);
 			}
+			if (context instanceof AssistContext) {
+				AssistContext context2= (AssistContext) context;
+				for (Iterator<ICommandAccess> it= resultingCollections.iterator(); it.hasNext();) {
+					if (!context2.canInvokeCommand(it.next().getCommandId())) {
+						it.remove();
+					}
+				}
+				if (resultingCollections.isEmpty()) {
+					coveringNode = coveringNode.getParent();
+					context= context2.adjustRange(coveringNode);
+					continue;
+				}
+			}
 			return resultingCollections.toArray(new IJavaCompletionProposal[resultingCollections.size()]);
 		}
 		return null;
+	}
+
+	private static IInvocationContext findSelectionForLine(IInvocationContext invocationContext) {
+		if (invocationContext instanceof AssistContext) {
+			AssistContext context= (AssistContext) invocationContext;
+
+			ASTNode potentialBlockNode= context.getCoveredNode();
+			if (potentialBlockNode == null) {
+				potentialBlockNode= context.getCoveringNode();
+			}
+			if (potentialBlockNode instanceof Block) {
+				Block block= (Block) potentialBlockNode;
+				CompilationUnit compilationUnit= context.getASTRoot();
+				int caretLineNumber= compilationUnit.getLineNumber(context.getSelectionOffset());
+				for (Statement statement : (List<Statement>) block.statements()) {
+					int startPosition= statement.getStartPosition();
+					int endPosition= Math.max(startPosition, startPosition + statement.getLength() - 1);
+					int startLineNumber= compilationUnit.getLineNumber(startPosition);
+					int endLineNumber= compilationUnit.getLineNumber(endPosition);
+					if (caretLineNumber >= startLineNumber && caretLineNumber <= endLineNumber) {
+						return context.adjustRange(statement);
+					}
+				}
+			}
+		}
+		return invocationContext;
 	}
 
 	static boolean noErrorsAtLocation(IProblemLocation[] locations) {
@@ -382,16 +424,39 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 		
 		ASTNode node= context.getCoveredNode();
 
-		if (!(node instanceof Expression)) {
+		if (node == null) {
 			if (context.getSelectionLength() != 0) {
 				return false;
 			}
 			node= context.getCoveringNode();
-			if (!(node instanceof Expression)) {
+			if (node == null) {
 				return false;
 			}
 		}
-		final Expression expression= (Expression) node;
+		final Expression expression;
+		if (node instanceof Expression) {
+			expression= (Expression) node;
+		} else if (node instanceof VariableDeclaration) {
+			VariableDeclaration declaration= (VariableDeclaration) node;
+			expression= declaration.getInitializer();
+		} else if (node instanceof VariableDeclarationStatement) {
+			List<VariableDeclarationFragment> fragments= ((VariableDeclarationStatement) node).fragments();
+			if (fragments.isEmpty()) {
+				return false;
+			}
+			VariableDeclarationFragment variableDeclarationFragment= fragments.get(fragments.size() - 1);
+			expression = variableDeclarationFragment.getInitializer();
+		} else if (node instanceof ExpressionStatement) {
+			ExpressionStatement statement= (ExpressionStatement) node;
+			expression= statement.getExpression();
+		} else if (node instanceof Expression) {
+			expression= (Expression) node;
+		} else {
+			return false;
+		}
+		if (expression == null) {
+			return false;
+		}
 
 		ITypeBinding binding= expression.resolveTypeBinding();
 		if (binding == null || Bindings.isVoidType(binding)) {
@@ -401,6 +466,9 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 			return true;
 		}
 
+		if (context instanceof AssistContext) {
+			context= ((AssistContext) context).adjustRange(expression);
+		}
 		final ICompilationUnit cu= context.getCompilationUnit();
 		ExtractTempRefactoring extractTempRefactoring= new ExtractTempRefactoring(context.getASTRoot(), context.getSelectionOffset(), context.getSelectionLength());
 		if (extractTempRefactoring.checkInitialConditions(new NullProgressMonitor()).isOK()) {
@@ -3351,25 +3419,39 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 	}
 
 	private static boolean getInlineLocalProposal(IInvocationContext context, final ASTNode node, Collection<ICommandAccess> proposals) throws CoreException {
-		if (!(node instanceof SimpleName))
+		VariableDeclaration declaration;
+		if (node instanceof SimpleName) {
+			SimpleName name= (SimpleName) node;
+			IBinding binding= name.resolveBinding();
+			if (!(binding instanceof IVariableBinding)) {
+				return false;
+			}
+			IVariableBinding varBinding= (IVariableBinding) binding;
+			if (varBinding.isField() || varBinding.isParameter()) {
+				return false;
+			}
+			ASTNode declaring= context.getASTRoot().findDeclaringNode(varBinding);
+			if (!(declaring instanceof VariableDeclarationFragment) || declaring.getLocationInParent() != VariableDeclarationStatement.FRAGMENTS_PROPERTY) {
+				return false;
+			}
+			declaration=(VariableDeclaration) declaring;
+		} else if (node instanceof VariableDeclarationFragment) {
+			declaration= (VariableDeclarationFragment) node;
+		} else if (node instanceof VariableDeclarationStatement) {
+			List<VariableDeclarationFragment> fragments= ((VariableDeclarationStatement) node).fragments();
+			if (fragments.isEmpty()) {
+				return false;
+			}
+			declaration= fragments.get(fragments.size() - 1);
+		} else {
 			return false;
-
-		SimpleName name= (SimpleName) node;
-		IBinding binding= name.resolveBinding();
-		if (!(binding instanceof IVariableBinding))
-			return false;
-		IVariableBinding varBinding= (IVariableBinding) binding;
-		if (varBinding.isField() || varBinding.isParameter())
-			return false;
-		ASTNode decl= context.getASTRoot().findDeclaringNode(varBinding);
-		if (!(decl instanceof VariableDeclarationFragment) || decl.getLocationInParent() != VariableDeclarationStatement.FRAGMENTS_PROPERTY)
-			return false;
+		}
 
 		if (proposals == null) {
 			return true;
 		}
 
-		InlineTempRefactoring refactoring= new InlineTempRefactoring((VariableDeclaration) decl);
+		InlineTempRefactoring refactoring= new InlineTempRefactoring(declaration);
 		if (refactoring.checkInitialConditions(new NullProgressMonitor()).isOK()) {
 			String label= CorrectionMessages.QuickAssistProcessor_inline_local_description;
 			Image image= JavaPluginImages.get(JavaPluginImages.IMG_CORRECTION_CHANGE);

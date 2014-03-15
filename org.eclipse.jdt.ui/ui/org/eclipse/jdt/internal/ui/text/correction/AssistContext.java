@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2009 IBM Corporation and others.
+ * Copyright (c) 2000, 2014 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -7,8 +7,14 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Timo Kinnunen <timo.kinnunen@gmail.com> - Bug 428139 [extract local] Extract local variable should be possible without selection
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.text.correction;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import org.eclipse.core.runtime.Assert;
 
@@ -38,6 +44,7 @@ public class AssistContext extends TextInvocationContext implements IInvocationC
 	 * @since 3.6
 	 */
 	private NodeFinder fNodeFinder;
+	private List<String> fCommands= Collections.emptyList();
 
 
 	/*
@@ -153,4 +160,23 @@ public class AssistContext extends TextInvocationContext implements IInvocationC
 		return fNodeFinder.getCoveredNode();
 	}
 
+	void setCommands(String... commands) {
+		fCommands= commands == null ? Collections.<String>emptyList() : Collections.unmodifiableList(new ArrayList<String>(Arrays.asList(commands)));
+	}
+
+	List<String> getCommands() {
+		return fCommands;
+	}
+
+	AssistContext adjustRange(ASTNode targetNode) {
+		int offset= targetNode == null ? -1 : targetNode.getStartPosition();
+		int length= targetNode == null ? 0 : targetNode.getLength();
+		AssistContext assistContext= new AssistContext(fCompilationUnit, getSourceViewer(), fEditor, offset, length);
+		assistContext.fCommands= fCommands;
+		return assistContext;
+	}
+
+	boolean canInvokeCommand(String commandId) {
+		return fCommands.size() == 0 || fCommands.contains(commandId);
+	}
 }
