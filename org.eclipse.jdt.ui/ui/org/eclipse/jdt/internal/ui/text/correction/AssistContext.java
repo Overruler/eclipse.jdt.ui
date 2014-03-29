@@ -169,11 +169,11 @@ public class AssistContext extends TextInvocationContext implements IInvocationC
 	}
 
 	AssistContext adjustRange(ASTNode targetNode) {
-		if (targetNode == null) {
-			return new AssistContext(fCompilationUnit, getSourceViewer(), fEditor, -1, 0);
-		} else {
-			return new AssistContext(fCompilationUnit, getSourceViewer(), fEditor, targetNode.getStartPosition(), targetNode.getLength());
-		}
+		int offset= targetNode == null ? -1 : targetNode.getStartPosition();
+		int length= targetNode == null ? 0 : targetNode.getLength();
+		AssistContext assistContext= new AssistContext(fCompilationUnit, getSourceViewer(), fEditor, offset, length);
+		assistContext.fCommands= fCommands;
+		return assistContext;
 	}
 
 	boolean canInvokeCommand(String commandId) {
