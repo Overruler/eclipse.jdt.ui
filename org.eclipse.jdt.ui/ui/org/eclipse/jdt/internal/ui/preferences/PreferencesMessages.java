@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2013 IBM Corporation and others.
+ * Copyright (c) 2000, 2014 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -13,6 +13,7 @@
  *     Guven Demir <guven.internet+eclipse@gmail.com> - [package explorer] Alternative package name shortening: abbreviation - https://bugs.eclipse.org/bugs/show_bug.cgi?id=299514
  *     Thomas Reinhardt <thomas@reinhardt.com> - [build path] user library dialog should allow to select JAR from workspace - http://bugs.eclipse.org/300542
  *     Stephan Herrmann <stephan@cs.tu-berlin.de> - [compiler][null] inheritance of null annotations as an option - https://bugs.eclipse.org/388281
+ *     Timo Kinnunen <timo.kinnunen@gmail.com> - [content assist] Allow to configure auto insertion trigger characters - https://bugs.eclipse.org/bugs/show_bug.cgi?id=348857
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.preferences;
 
@@ -157,6 +158,7 @@ public final class PreferencesMessages extends NLS {
 	public static String JavaEditorPreferencePage_highlightEnclosingBrackets;
 	public static String JavaEditorPreferencePage_highlightMatchingBracket;
 	public static String JavaEditorPreferencePage_insertSingleProposalsAutomatically;
+	public static String JavaEditorPreferencePage_disableContextAwareInsertionTriggers;
 	public static String JavaEditorPreferencePage_showOnlyProposalsVisibleInTheInvocationContext;
 	public static String JavaEditorPreferencePage_presentProposalsInAlphabeticalOrder;
 	public static String JavaEditorPreferencePage_coloring_element;

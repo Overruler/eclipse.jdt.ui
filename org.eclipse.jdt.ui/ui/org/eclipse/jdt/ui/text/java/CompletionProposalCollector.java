@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2013 IBM Corporation and others.
+ * Copyright (c) 2000, 2014 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -7,6 +7,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Timo Kinnunen <timo.kinnunen@gmail.com> - [content assist] Allow to configure auto insertion trigger characters - https://bugs.eclipse.org/bugs/show_bug.cgi?id=348857
  *******************************************************************************/
 package org.eclipse.jdt.ui.text.java;
 
@@ -43,6 +44,8 @@ import org.eclipse.jdt.core.formatter.CodeFormatter;
 import org.eclipse.jdt.internal.corext.util.CodeFormatterUtil;
 import org.eclipse.jdt.internal.corext.util.CollectionsUtil;
 import org.eclipse.jdt.internal.corext.util.TypeFilter;
+
+import org.eclipse.jdt.ui.PreferenceConstants;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.text.java.AnnotationAtttributeProposalInfo;
@@ -720,8 +723,8 @@ public class CompletionProposalCollector extends CompletionRequestor {
 		if (fJavaProject != null)
 			javaProposal.setProposalInfo(new FieldProposalInfo(fJavaProject, proposal));
 
-		javaProposal.setTriggerCharacters(VAR_TRIGGER);
-
+		if (!JavaPlugin.getDefault().getPreferenceStore().getBoolean(PreferenceConstants.CODEASSIST_INSERT_USING_ENTER_ONLY))
+			javaProposal.setTriggerCharacters(VAR_TRIGGER);
 		return javaProposal;
 	}
 
@@ -746,8 +749,8 @@ public class CompletionProposalCollector extends CompletionRequestor {
 		if (fJavaProject != null)
 			javaProposal.setProposalInfo(new FieldProposalInfo(fJavaProject, proposal));
 
-		javaProposal.setTriggerCharacters(VAR_TRIGGER);
-
+		if (!JavaPlugin.getDefault().getPreferenceStore().getBoolean(PreferenceConstants.CODEASSIST_INSERT_USING_ENTER_ONLY))
+			javaProposal.setTriggerCharacters(VAR_TRIGGER);
 		return javaProposal;
 	}
 
@@ -805,7 +808,8 @@ public class CompletionProposalCollector extends CompletionRequestor {
 		StyledString label= fLabelProvider.createSimpleLabelWithType(proposal);
 		int relevance= computeRelevance(proposal);
 		final JavaCompletionProposal javaProposal= new JavaCompletionProposal(completion, start, length, image, label, relevance);
-		javaProposal.setTriggerCharacters(VAR_TRIGGER);
+		if (!JavaPlugin.getDefault().getPreferenceStore().getBoolean(PreferenceConstants.CODEASSIST_INSERT_USING_ENTER_ONLY))
+			javaProposal.setTriggerCharacters(VAR_TRIGGER);
 		return javaProposal;
 	}
 

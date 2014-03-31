@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2013 IBM Corporation and others.
+ * Copyright (c) 2000, 2014 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -7,6 +7,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Timo Kinnunen <timo.kinnunen@gmail.com> - [content assist] Allow to configure auto insertion trigger characters - https://bugs.eclipse.org/bugs/show_bug.cgi?id=348857
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.preferences;
 
@@ -58,6 +59,7 @@ class CodeAssistConfigurationBlock extends OptionsConfigurationBlock {
 	private static final Key PREF_CODEASSIST_AUTOACTIVATION= getJDTUIKey(PreferenceConstants.CODEASSIST_AUTOACTIVATION);
 	private static final Key PREF_CODEASSIST_AUTOACTIVATION_DELAY= getJDTUIKey(PreferenceConstants.CODEASSIST_AUTOACTIVATION_DELAY);
 	private static final Key PREF_CODEASSIST_AUTOINSERT= getJDTUIKey(PreferenceConstants.CODEASSIST_AUTOINSERT);
+	private static final Key PREF_CODEASSIST_INSERT_USING_ENTER_ONLY= getJDTUIKey(PreferenceConstants.CODEASSIST_INSERT_USING_ENTER_ONLY);
 	private static final Key PREF_CODEASSIST_AUTOACTIVATION_TRIGGERS_JAVA= getJDTUIKey(PreferenceConstants.CODEASSIST_AUTOACTIVATION_TRIGGERS_JAVA);
 	private static final Key PREF_CODEASSIST_AUTOACTIVATION_TRIGGERS_JAVADOC= getJDTUIKey(PreferenceConstants.CODEASSIST_AUTOACTIVATION_TRIGGERS_JAVADOC);
 	private static final Key PREF_CODEASSIST_SHOW_VISIBLE_PROPOSALS= getJDTUIKey(PreferenceConstants.CODEASSIST_SHOW_VISIBLE_PROPOSALS);
@@ -77,6 +79,7 @@ class CodeAssistConfigurationBlock extends OptionsConfigurationBlock {
 				PREF_CODEASSIST_AUTOACTIVATION,
 				PREF_CODEASSIST_AUTOACTIVATION_DELAY,
 				PREF_CODEASSIST_AUTOINSERT,
+				PREF_CODEASSIST_INSERT_USING_ENTER_ONLY,
 				PREF_CODEASSIST_AUTOACTIVATION_TRIGGERS_JAVA,
 				PREF_CODEASSIST_AUTOACTIVATION_TRIGGERS_JAVADOC,
 				PREF_CODEASSIST_SHOW_VISIBLE_PROPOSALS,
@@ -154,6 +157,9 @@ class CodeAssistConfigurationBlock extends OptionsConfigurationBlock {
 		String label;
 		label= PreferencesMessages.JavaEditorPreferencePage_insertSingleProposalsAutomatically;
 		addCheckBox(composite, label, PREF_CODEASSIST_AUTOINSERT, trueFalse, 0);
+
+		label= PreferencesMessages.JavaEditorPreferencePage_disableContextAwareInsertionTriggers;
+		addCheckBox(composite, label, PREF_CODEASSIST_INSERT_USING_ENTER_ONLY, trueFalse, 0);
 
 		label= PreferencesMessages.JavaEditorPreferencePage_completePrefixes;
 		addCheckBox(composite, label, PREF_CODEASSIST_PREFIX_COMPLETION, trueFalse, 0);
