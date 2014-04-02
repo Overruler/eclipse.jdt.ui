@@ -8,11 +8,11 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *     Sebastian Davids <sdavids@gmx.de> - Bug 37432 getInvertEqualsProposal
- *     Timo Kinnunen <timo.kinnunen@gmail.com> - Bug 428139 [extract local] Extract local variable should be possible without selection
  *     Benjamin Muskalla <b.muskalla@gmx.net> - Bug 36350 convertToStringBufferPropsal
  *     Chris West (Faux) <eclipse@goeswhere.com> - [quick assist] "Use 'StringBuilder' for string concatenation" could fix existing misuses - https://bugs.eclipse.org/bugs/show_bug.cgi?id=282755
  *     Lukas Hanke <hanke@yatta.de> - Bug 241696 [quick fix] quickfix to iterate over a collection - https://bugs.eclipse.org/bugs/show_bug.cgi?id=241696
  *     Eugene Lucash <e.lucash@gmail.com> - [quick assist] Add key binding for Extract method Quick Assist - https://bugs.eclipse.org/424166
+ *     Timo Kinnunen <timo.kinnunen@gmail.com> - Bug 428139 [extract local] Extract local variable should be possible without selection
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.text.correction;
 
@@ -290,14 +290,14 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 				getConvertStringConcatenationProposals(context, resultingCollections);
 				getMissingCaseStatementProposals(context, coveringNode, resultingCollections);
 			}
-			if(context instanceof AssistContext) {
+			if (context instanceof AssistContext) {
 				AssistContext context2= (AssistContext) context;
 				for (Iterator<ICommandAccess> it= resultingCollections.iterator(); it.hasNext();) {
 					if (!context2.canInvokeCommand(it.next().getCommandId())) {
 						it.remove();
 					}
 				}
-				if(resultingCollections.isEmpty()) {
+				if (resultingCollections.isEmpty()) {
 					coveringNode = coveringNode.getParent();
 					context= context2.adjustRange(coveringNode);
 					continue;
@@ -2902,7 +2902,7 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 			if (fragments.isEmpty()) {
 				return false;
 			}
-			declaration= fragments.get(0);
+			declaration= fragments.get(fragments.size() - 1);
 		} else {
 			return false;
 		}

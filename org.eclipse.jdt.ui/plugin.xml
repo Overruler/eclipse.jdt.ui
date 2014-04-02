@@ -12,6 +12,7 @@
 <!--     Francis Upton IV, Oakland Software <francisu@ieee.org> - Add support for Go Into with the ProjectExplorer - https://bugs.eclipse.org/bugs/show_bug.cgi?id=262091 -->
 <!--     Troy Bishop <tjbishop@ca.ibm.com> - Add support for importing/exporting Java Code Style preferences - https://bugs.eclipse.org/bugs/show_bug.cgi?id=304395 -->
 <!--     Eugene Lucash <e.lucash@gmail.com> - [quick assist] Add key binding for Extract method Quick Assist - https://bugs.eclipse.org/424166 -->
+<!--     Timo Kinnunen <timo.kinnunen@gmail.com> - [extract local] Extract local variable should be possible without selection - https://bugs.eclipse.org/428139 -->
 <!-- ====================================================================== -->
 <plugin>
 
@@ -4421,6 +4422,21 @@
             sequence="M1+2 M"
             contextId="org.eclipse.jdt.ui.javaEditorScope"
             commandId="org.eclipse.jdt.ui.correction.extractMethodInplace.assist"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
+       <key
+            sequence="M1+M2+M3+ARROW_LEFT"
+            contextId="org.eclipse.jdt.ui.javaEditorScope"
+            commandId="org.eclipse.jdt.ui.correction.extractLocalNotReplaceOccurrences.assist"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
+       <key
+            sequence="M1+M3+ARROW_LEFT"
+            contextId="org.eclipse.jdt.ui.javaEditorScope"
+            commandId="org.eclipse.jdt.ui.correction.extractLocal.assist"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
+       <key
+            sequence="M1+M3+ARROW_RIGHT"
+            contextId="org.eclipse.jdt.ui.javaEditorScope"
+            commandId="org.eclipse.jdt.ui.correction.inlineLocal.assist"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
        <key
             sequence="M1+2 L"
