@@ -243,6 +243,7 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 	}
 
 	public IJavaCompletionProposal[] getAssists(IInvocationContext context, IProblemLocation[] locations) throws CoreException {
+		context= findSelectionForLine(context);
 		ASTNode coveringNode= context.getCoveringNode();
 		while (coveringNode != null) {
 			ArrayList<ASTNode> coveredNodes= AdvancedQuickAssistProcessor.getFullyCoveredNodes(context, coveringNode);
@@ -306,6 +307,32 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 			return resultingCollections.toArray(new IJavaCompletionProposal[resultingCollections.size()]);
 		}
 		return null;
+	}
+
+	private static IInvocationContext findSelectionForLine(IInvocationContext invocationContext) {
+		if (invocationContext instanceof AssistContext) {
+			AssistContext context= (AssistContext) invocationContext;
+
+			ASTNode potentialBlockNode= context.getCoveredNode();
+			if (potentialBlockNode == null) {
+				potentialBlockNode= context.getCoveringNode();
+			}
+			if (potentialBlockNode instanceof Block) {
+				Block block= (Block) potentialBlockNode;
+				CompilationUnit compilationUnit= context.getASTRoot();
+				int caretLineNumber= compilationUnit.getLineNumber(context.getSelectionOffset());
+				for (Statement statement : (List<Statement>) block.statements()) {
+					int startPosition= statement.getStartPosition();
+					int endPosition= Math.max(startPosition, startPosition + statement.getLength() - 1);
+					int startLineNumber= compilationUnit.getLineNumber(startPosition);
+					int endLineNumber= compilationUnit.getLineNumber(endPosition);
+					if (caretLineNumber >= startLineNumber && caretLineNumber <= endLineNumber) {
+						return context.adjustRange(statement);
+					}
+				}
+			}
+		}
+		return invocationContext;
 	}
 
 	static boolean noErrorsAtLocation(IProblemLocation[] locations) {
@@ -380,7 +407,8 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 		
 		ASTNode node= context.getCoveredNode();
 
-		if (!(node instanceof Expression)) {
+		final Expression expression;
+		if (node == null) {
 			if (context.getSelectionLength() != 0) {
 				return false;
 			}
@@ -388,8 +416,28 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 			if (!(node instanceof Expression)) {
 				return false;
 			}
+			expression= (Expression) node;
+		} else if (node instanceof VariableDeclaration) {
+			VariableDeclaration declaration= (VariableDeclaration) node;
+			expression= declaration.getInitializer();
+		} else if (node instanceof VariableDeclarationStatement) {
+			List<VariableDeclarationFragment> fragments= ((VariableDeclarationStatement) node).fragments();
+			if (fragments.isEmpty()) {
+				return false;
+			}
+			VariableDeclarationFragment variableDeclarationFragment= fragments.get(fragments.size() - 1);
+			expression = variableDeclarationFragment.getInitializer();
+		} else if (node instanceof ExpressionStatement) {
+			ExpressionStatement statement= (ExpressionStatement) node;
+			expression= statement.getExpression();
+		} else if (node instanceof Expression) {
+			expression= (Expression) node;
+		} else {
+			return false;
 		}
-		final Expression expression= (Expression) node;
+		if (expression == null) {
+			return false;
+		}
 
 		ITypeBinding binding= expression.resolveTypeBinding();
 		if (binding == null || Bindings.isVoidType(binding)) {
@@ -399,6 +447,9 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 			return true;
 		}
 
+		if (context instanceof AssistContext) {
+			context= ((AssistContext) context).adjustRange(expression);
+		}
 		final ICompilationUnit cu= context.getCompilationUnit();
 		ExtractTempRefactoring extractTempRefactoring= new ExtractTempRefactoring(context.getASTRoot(), context.getSelectionOffset(), context.getSelectionLength());
 		if (extractTempRefactoring.checkInitialConditions(new NullProgressMonitor()).isOK()) {
@@ -2898,7 +2949,7 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 		} else if (node instanceof VariableDeclarationFragment) {
 			declaration= (VariableDeclarationFragment) node;
 		} else if (node instanceof VariableDeclarationStatement) {
-			List<VariableDeclaration> fragments= ((VariableDeclarationStatement) node).fragments();
+			List<VariableDeclarationFragment> fragments= ((VariableDeclarationStatement) node).fragments();
 			if (fragments.isEmpty()) {
 				return false;
 			}
