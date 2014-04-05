@@ -407,15 +407,17 @@ public class QuickAssistProcessor implements IQuickAssistProcessor {
 		
 		ASTNode node= context.getCoveredNode();
 
-		final Expression expression;
 		if (node == null) {
 			if (context.getSelectionLength() != 0) {
 				return false;
 			}
 			node= context.getCoveringNode();
-			if (!(node instanceof Expression)) {
+			if (node == null) {
 				return false;
 			}
+		}
+		final Expression expression;
+		if (node instanceof Expression) {
 			expression= (Expression) node;
 		} else if (node instanceof VariableDeclaration) {
 			VariableDeclaration declaration= (VariableDeclaration) node;
