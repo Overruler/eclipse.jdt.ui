@@ -158,11 +158,11 @@ public final class PreferencesMessages extends NLS {
 	public static String JavaEditorPreferencePage_highlightEnclosingBrackets;
 	public static String JavaEditorPreferencePage_highlightMatchingBracket;
 	public static String JavaEditorPreferencePage_insertSingleProposalsAutomatically;
-	public static String JavaEditorPreferencePage_disableContextAwareInsertionTriggers;
 	public static String JavaEditorPreferencePage_showOnlyProposalsVisibleInTheInvocationContext;
 	public static String JavaEditorPreferencePage_presentProposalsInAlphabeticalOrder;
 	public static String JavaEditorPreferencePage_coloring_element;
 	public static String JavaEditorPreferencePage_enableAutoActivation;
+	public static String JavaEditorPreferencePage_enableAutoCompletion;
 	public static String JavaEditorPreferencePage_automaticallyAddImportInsteadOfQualifiedName;
 	public static String JavaEditorPreferencePage_suggestStaticImports;
 	public static String JavaEditorPreferencePage_completionInserts;
@@ -174,6 +174,9 @@ public final class PreferencesMessages extends NLS {
 	public static String JavaEditorPreferencePage_autoActivationDelay;
 	public static String JavaEditorPreferencePage_autoActivationTriggersForJava;
 	public static String JavaEditorPreferencePage_autoActivationTriggersForJavaDoc;
+	public static String JavaEditorPreferencePage_autoCompletionTriggers;
+	public static String JavaEditorPreferencePage_autoCompletionTriggersInsert;
+	public static String JavaEditorPreferencePage_autoCompletionTriggersRestart;
 	public static String JavaEditorPreferencePage_completePrefixes;
 	public static String JavaEditorPreferencePage_backgroundForMethodParameters;
 	public static String JavaEditorPreferencePage_foregroundForMethodParameters;

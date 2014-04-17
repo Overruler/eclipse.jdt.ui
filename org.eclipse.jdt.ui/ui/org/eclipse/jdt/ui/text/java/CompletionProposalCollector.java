@@ -45,8 +45,6 @@ import org.eclipse.jdt.internal.corext.util.CodeFormatterUtil;
 import org.eclipse.jdt.internal.corext.util.CollectionsUtil;
 import org.eclipse.jdt.internal.corext.util.TypeFilter;
 
-import org.eclipse.jdt.ui.PreferenceConstants;
-
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.text.java.AnnotationAtttributeProposalInfo;
 import org.eclipse.jdt.internal.ui.text.java.AnonymousTypeCompletionProposal;
@@ -723,8 +721,7 @@ public class CompletionProposalCollector extends CompletionRequestor {
 		if (fJavaProject != null)
 			javaProposal.setProposalInfo(new FieldProposalInfo(fJavaProject, proposal));
 
-		if (!JavaPlugin.getDefault().getPreferenceStore().getBoolean(PreferenceConstants.CODEASSIST_INSERT_USING_ENTER_ONLY))
-			javaProposal.setTriggerCharacters(VAR_TRIGGER);
+		javaProposal.setTriggerCharacters(JavaPlugin.getActiveCodeAssistAutoCompletionTriggerCharacters(VAR_TRIGGER));
 		return javaProposal;
 	}
 
@@ -749,8 +746,7 @@ public class CompletionProposalCollector extends CompletionRequestor {
 		if (fJavaProject != null)
 			javaProposal.setProposalInfo(new FieldProposalInfo(fJavaProject, proposal));
 
-		if (!JavaPlugin.getDefault().getPreferenceStore().getBoolean(PreferenceConstants.CODEASSIST_INSERT_USING_ENTER_ONLY))
-			javaProposal.setTriggerCharacters(VAR_TRIGGER);
+		javaProposal.setTriggerCharacters(JavaPlugin.getActiveCodeAssistAutoCompletionTriggerCharacters(VAR_TRIGGER));
 		return javaProposal;
 	}
 
@@ -808,8 +804,7 @@ public class CompletionProposalCollector extends CompletionRequestor {
 		StyledString label= fLabelProvider.createSimpleLabelWithType(proposal);
 		int relevance= computeRelevance(proposal);
 		final JavaCompletionProposal javaProposal= new JavaCompletionProposal(completion, start, length, image, label, relevance);
-		if (!JavaPlugin.getDefault().getPreferenceStore().getBoolean(PreferenceConstants.CODEASSIST_INSERT_USING_ENTER_ONLY))
-			javaProposal.setTriggerCharacters(VAR_TRIGGER);
+		javaProposal.setTriggerCharacters(JavaPlugin.getActiveCodeAssistAutoCompletionTriggerCharacters(VAR_TRIGGER));
 		return javaProposal;
 	}
 

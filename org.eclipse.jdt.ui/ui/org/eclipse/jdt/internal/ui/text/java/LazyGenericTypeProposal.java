@@ -62,7 +62,6 @@ import org.eclipse.jdt.internal.corext.dom.Bindings;
 import org.eclipse.jdt.internal.corext.template.java.SignatureUtil;
 import org.eclipse.jdt.internal.corext.util.Strings;
 
-import org.eclipse.jdt.ui.PreferenceConstants;
 import org.eclipse.jdt.ui.text.java.JavaContentAssistInvocationContext;
 
 import org.eclipse.jdt.internal.ui.JavaPlugin;
@@ -275,9 +274,7 @@ public class LazyGenericTypeProposal extends LazyJavaTypeCompletionProposal {
 	 */
 	@Override
 	protected char[] computeTriggerCharacters() {
-		if (JavaPlugin.getDefault().getPreferenceStore().getBoolean(PreferenceConstants.CODEASSIST_INSERT_USING_ENTER_ONLY))
-			return new char[0];
-		return GENERIC_TYPE_TRIGGERS;
+		return JavaPlugin.getActiveCodeAssistAutoCompletionTriggerCharacters(GENERIC_TYPE_TRIGGERS);
 	}
 
 	/**

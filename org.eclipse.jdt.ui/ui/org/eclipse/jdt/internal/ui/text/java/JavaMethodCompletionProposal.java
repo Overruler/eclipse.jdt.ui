@@ -106,13 +106,11 @@ public class JavaMethodCompletionProposal extends LazyJavaCompletionProposal {
 
 	@Override
 	protected char[] computeTriggerCharacters() {
-		if (JavaPlugin.getDefault().getPreferenceStore().getBoolean(PreferenceConstants.CODEASSIST_INSERT_USING_ENTER_ONLY))
-			return new char[0];
 		if (fProposal.getKind() == CompletionProposal.METHOD_NAME_REFERENCE)
-			return METHOD_NAME_TRIGGERS;
+			return JavaPlugin.getActiveCodeAssistAutoCompletionTriggerCharacters(METHOD_NAME_TRIGGERS);
 		if (hasParameters())
-			return METHOD_WITH_ARGUMENTS_TRIGGERS;
-		return METHOD_TRIGGERS;
+			return JavaPlugin.getActiveCodeAssistAutoCompletionTriggerCharacters(METHOD_WITH_ARGUMENTS_TRIGGERS);
+		return JavaPlugin.getActiveCodeAssistAutoCompletionTriggerCharacters(METHOD_TRIGGERS);
 	}
 
 	/**

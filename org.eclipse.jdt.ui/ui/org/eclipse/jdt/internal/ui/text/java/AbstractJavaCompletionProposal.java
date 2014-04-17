@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2005, 2013 IBM Corporation and others.
+ * Copyright (c) 2005, 2014 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -8,6 +8,7 @@
  * Contributors:
  *     Timo Kinnunen - Contributions for bug 377373 - [subwords] known limitations with JDT 3.8
  *     IBM Corporation - initial API and implementation
+ *     Timo Kinnunen <timo.kinnunen@gmail.com> - [content assist] Allow to configure auto insertion trigger characters - https://bugs.eclipse.org/bugs/show_bug.cgi?id=348857
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui.text.java;
 
@@ -486,6 +487,16 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 				}
 			}
 			return;
+		} else if (document != null && invalidateIfAutocompletionRestartRequired(trigger)) {
+			try {
+				String replacement= document.get(getReplacementOffset(), getReplacementLength()) + trigger;
+				setReplacementString(replacement);
+				setReplacementLength(replacement.length());
+				setCursorPosition(replacement.length());
+				fIsValidated= false;
+			} catch (BadLocationException x) {
+				JavaPlugin.log(x);
+			}
 		}
 
 		// don't eat if not in preferences, XOR with Ctrl
@@ -498,6 +509,13 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 
 		apply(document, trigger, offset);
 		fToggleEating= false;
+	}
+
+	private boolean invalidateIfAutocompletionRestartRequired(char trigger) {
+		IPreferenceStore store= JavaPlugin.getDefault().getPreferenceStore();
+		return (store.getBoolean(PreferenceConstants.CODEASSIST_AUTOCOMPLETION)
+				&& store.getBoolean(PreferenceConstants.CODEASSIST_AUTOCOMPLETION_TRIGGERS_RESTART)
+				&& CharOperation.contains(trigger, getTriggerCharacters()));
 	}
 
 	/**
@@ -755,13 +773,17 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 		if (!isOffsetValid(offset))
 			return fIsValidated= false;
 
-		fIsValidated= isValidPrefix(getPrefix(document, offset));
+		String prefix= getPrefix(document, offset);
+		fIsValidated= isValidPrefix(prefix);
 
 		if (fIsValidated && event != null) {
 			// adapt replacement range to document change
-			int delta= (event.fText == null ? 0 : event.fText.length()) - event.fLength;
-			final int newLength= Math.max(getReplacementLength() + delta, 0);
-			setReplacementLength(newLength);
+			//int delta= (event.fText == null ? 0 : event.fText.length()) - event.fLength;
+			//final int newLength= Math.max(getReplacementLength() + delta, 0);
+			//setReplacementLength(newLength);
+			
+			// if we just became validated a negative delta might not overlap us, just use prefix length
+			setReplacementLength(prefix.length());
 		}
 
 		return fIsValidated;

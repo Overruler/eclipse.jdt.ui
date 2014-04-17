@@ -7,6 +7,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Timo Kinnunen <timo.kinnunen@gmail.com> - [content assist] Allow to configure auto insertion trigger characters - https://bugs.eclipse.org/bugs/show_bug.cgi?id=348857
  *******************************************************************************/
 package org.eclipse.jdt.internal.ui;
 
@@ -1123,4 +1124,38 @@ public class JavaPlugin extends AbstractUIPlugin {
 		return null;
 	}
 
+	/**
+	 * Returns the characters that are configured to trigger code assist 
+	 * auto completion and are included in the given array of characters. The 
+	 * given array is not modified or retained by this method and can be null. 
+	 * If the given array is null then the effect is the same as if   
+	 * new char[] {'\t', ' ', '#', '(', ',', '-', '.', ';', '<', '=', '[', '}'}
+	 * had been given. The returned array is not retained by this method.
+	 *
+	 * @param allowed the characters that this method can return, or null for defaults
+	 * @return a new array containing the currently active subset of triggering characters
+	 * @since 3.11
+	 */
+	public static char[] getActiveCodeAssistAutoCompletionTriggerCharacters(char[] allowed) {
+		if (!JavaPlugin.getDefault().getPreferenceStore().getBoolean(PreferenceConstants.CODEASSIST_AUTOCOMPLETION)) {
+			return new char[0];
+		}
+		String triggers = JavaPlugin.getDefault().getPreferenceStore().getString(PreferenceConstants.CODEASSIST_AUTOCOMPLETION_TRIGGERS);
+		if (triggers == null || triggers.length() == 0) {
+			return new char[0];
+		} else {
+			triggers= triggers.replace("\\t", "\t");  //$NON-NLS-1$//$NON-NLS-2$
+		}
+		if (allowed == null) {
+			allowed= new char[] {'\t', ' ', '#', '(', ',', '-', '.', ';', '<', '=', '[', '}'};
+		}
+		StringBuilder builder= new StringBuilder(allowed.length);
+		for (int i= 0; i < allowed.length; i++) {
+			char c= allowed[i];
+			if (triggers.indexOf(c) != -1) {
+				builder.append(c);
+			}
+		}
+		return builder.toString().toCharArray();
+	}
 }
