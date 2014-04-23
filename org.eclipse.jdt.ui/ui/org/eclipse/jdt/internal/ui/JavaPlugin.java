@@ -1125,18 +1125,22 @@ public class JavaPlugin extends AbstractUIPlugin {
 	}
 
 	/**
-	 * Returns the characters that are configured to trigger code assist 
-	 * auto completion and are included in the given array of characters. The 
-	 * given array is not modified or retained by this method and can be null. 
-	 * If the given array is null then the effect is the same as if   
+	 * Returns the all normal characters that are configured to trigger code assist 
+	 * auto completion and those special characters that are included in the given 
+	 * array of allowed special characters. The given array is not modified or 
+	 * retained by this method and can be null. If the given array is null then 
+	 * the effect is the same as if all the special characters in    
 	 * new char[] {'\t', ' ', '#', '(', ',', '-', '.', ';', '<', '=', '[', '}'}
 	 * had been given. The returned array is not retained by this method.
+	 * 
+	 * Note: The list of special characters is subject to change and is provided
+	 * for informational purposes only.
 	 *
-	 * @param allowed the characters that this method can return, or null for defaults
-	 * @return a new array containing the currently active subset of triggering characters
+	 * @param allowedSpecial special characters this method can return, or null
+	 * @return a new array containing the active triggering characters
 	 * @since 3.11
 	 */
-	public static char[] getActiveCodeAssistAutoCompletionTriggerCharacters(char[] allowed) {
+	public static char[] getActiveCodeAssistAutoCompletionTriggerCharacters(char[] allowedSpecial) {
 		if (!JavaPlugin.getDefault().getPreferenceStore().getBoolean(PreferenceConstants.CODEASSIST_AUTOCOMPLETION)) {
 			return new char[0];
 		}
@@ -1146,13 +1150,12 @@ public class JavaPlugin extends AbstractUIPlugin {
 		} else {
 			triggers= triggers.replace("\\t", "\t");  //$NON-NLS-1$//$NON-NLS-2$
 		}
-		if (allowed == null) {
-			allowed= new char[] {'\t', ' ', '#', '(', ',', '-', '.', ';', '<', '=', '[', '}'};
-		}
-		StringBuilder builder= new StringBuilder(allowed.length);
-		for (int i= 0; i < allowed.length; i++) {
-			char c= allowed[i];
-			if (triggers.indexOf(c) != -1) {
+		String all= "\t #(,-.;<=[}"; //$NON-NLS-1$
+		String allowed= allowedSpecial == null ? all : new String(allowedSpecial);
+		StringBuilder builder= new StringBuilder(triggers.length());
+		for (int i= 0, n= triggers.length(); i < n; i++) {
+			char c= triggers.charAt(i);
+			if (all.indexOf(c) == -1 || allowed.indexOf(c) != -1) {
 				builder.append(c);
 			}
 		}

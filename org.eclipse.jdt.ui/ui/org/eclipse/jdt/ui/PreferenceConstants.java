@@ -2971,7 +2971,7 @@ public class PreferenceConstants {
 	 * </p>
 	 * @since 3.11
 	 */
-	public final static String CODEASSIST_AUTOCOMPLETION_TRIGGERS_RESTART= "content_assist_autocompletion_triggers_restart"; //$NON-NLS-1$
+	public final static String CODEASSIST_AUTOCOMPLETION_TRIGGERS_RESET= "content_assist_autocompletion_triggers_reset"; //$NON-NLS-1$
 
 	/**
 	 * A named preference that holds the background color used in the code assist selection dialog.
@@ -3831,7 +3831,7 @@ public class PreferenceConstants {
 		store.setDefault(PreferenceConstants.CODEASSIST_AUTOACTIVATION_TRIGGERS_JAVADOC, "@#"); //$NON-NLS-1$
 		store.setDefault(PreferenceConstants.CODEASSIST_AUTOCOMPLETION, true);
 		store.setDefault(PreferenceConstants.CODEASSIST_AUTOCOMPLETION_TRIGGERS, "\\t #(,-.;<=[}"); //$NON-NLS-1$
-		store.setDefault(PreferenceConstants.CODEASSIST_AUTOCOMPLETION_TRIGGERS_RESTART, false);
+		store.setDefault(PreferenceConstants.CODEASSIST_AUTOCOMPLETION_TRIGGERS_RESET, false);
 		store.setDefault(PreferenceConstants.CODEASSIST_SHOW_VISIBLE_PROPOSALS, true);
 		store.setDefault(PreferenceConstants.CODEASSIST_CASE_SENSITIVITY, false);
 		store.setDefault(PreferenceConstants.CODEASSIST_ADDIMPORT, true);

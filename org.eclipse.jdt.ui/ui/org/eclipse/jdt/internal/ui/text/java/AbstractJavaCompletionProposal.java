@@ -489,14 +489,19 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 			return;
 		} else if (document != null && invalidateIfAutocompletionRestartRequired(trigger)) {
 			try {
-				String replacement= document.get(getReplacementOffset(), getReplacementLength()) + trigger;
-				setReplacementString(replacement);
-				setReplacementLength(replacement.length());
-				setCursorPosition(replacement.length());
-				fIsValidated= false;
+				Point selection= viewer.getSelectedRange();
+				int newLength= selection.x + selection.y - getReplacementOffset();
+				if (newLength >= 0) {
+					setReplacementLength(newLength);
+					String replacement= document.get(getReplacementOffset(), newLength) + trigger;
+					setReplacementString(replacement);
+					setCursorPosition(replacement.length());
+					apply(document, trigger, offset);
+				}
 			} catch (BadLocationException x) {
 				JavaPlugin.log(x);
 			}
+			return;
 		}
 
 		// don't eat if not in preferences, XOR with Ctrl
@@ -514,7 +519,7 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 	private boolean invalidateIfAutocompletionRestartRequired(char trigger) {
 		IPreferenceStore store= JavaPlugin.getDefault().getPreferenceStore();
 		return (store.getBoolean(PreferenceConstants.CODEASSIST_AUTOCOMPLETION)
-				&& store.getBoolean(PreferenceConstants.CODEASSIST_AUTOCOMPLETION_TRIGGERS_RESTART)
+				&& store.getBoolean(PreferenceConstants.CODEASSIST_AUTOCOMPLETION_TRIGGERS_RESET)
 				&& CharOperation.contains(trigger, getTriggerCharacters()));
 	}
 

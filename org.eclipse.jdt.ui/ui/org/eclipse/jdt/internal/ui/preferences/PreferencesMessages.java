@@ -176,7 +176,7 @@ public final class PreferencesMessages extends NLS {
 	public static String JavaEditorPreferencePage_autoActivationTriggersForJavaDoc;
 	public static String JavaEditorPreferencePage_autoCompletionTriggers;
 	public static String JavaEditorPreferencePage_autoCompletionTriggersInsert;
-	public static String JavaEditorPreferencePage_autoCompletionTriggersRestart;
+	public static String JavaEditorPreferencePage_autoCompletionTriggersReset;
 	public static String JavaEditorPreferencePage_completePrefixes;
 	public static String JavaEditorPreferencePage_backgroundForMethodParameters;
 	public static String JavaEditorPreferencePage_foregroundForMethodParameters;
