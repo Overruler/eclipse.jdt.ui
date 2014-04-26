@@ -518,9 +518,11 @@ public abstract class AbstractJavaCompletionProposal implements IJavaCompletionP
 
 	private boolean invalidateIfAutocompletionRestartRequired(char trigger) {
 		IPreferenceStore store= JavaPlugin.getDefault().getPreferenceStore();
-		return (store.getBoolean(PreferenceConstants.CODEASSIST_AUTOCOMPLETION)
-				&& store.getBoolean(PreferenceConstants.CODEASSIST_AUTOCOMPLETION_TRIGGERS_RESET)
-				&& CharOperation.contains(trigger, getTriggerCharacters()));
+		if (store.getBoolean(PreferenceConstants.CODEASSIST_AUTOCOMPLETION) && store.getBoolean(PreferenceConstants.CODEASSIST_AUTOCOMPLETION_TRIGGERS_RESET)) {
+			char[] triggerCharacters= getTriggerCharacters();
+			return (triggerCharacters != null && CharOperation.contains(trigger, triggerCharacters));
+		}
+		return false;
 	}
 
 	/**
