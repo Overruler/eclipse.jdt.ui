@@ -6,6 +6,7 @@
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
+ *     Timo Kinnunen - Contribution for bug 432147 - [refactoring] Extract Constant displays error message on name of local variable
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package org.eclipse.jdt.internal.corext.refactoring.code;
@@ -982,5 +983,9 @@ public class PromoteTempToFieldRefactoring extends Refactoring {
 
 	public void setLinkedProposalModel(LinkedProposalModel model) {
 		fLinkedProposalModel= model;
+	}
+
+	public void setSelfInitializing(boolean value) {
+		fSelfInitializing = value;
 	}
 }
