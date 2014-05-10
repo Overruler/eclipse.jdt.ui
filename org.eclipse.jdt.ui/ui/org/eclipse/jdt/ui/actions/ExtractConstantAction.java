@@ -6,6 +6,7 @@
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
+ *     Timo Kinnunen - Contribution for bug 432147 - [refactoring] Extract Constant displays error message on name of local variable
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package org.eclipse.jdt.ui.actions;
@@ -14,17 +15,32 @@ import org.eclipse.jface.text.ITextSelection;
 
 import org.eclipse.ui.PlatformUI;
 
+import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.SourceRange;
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.VariableDeclaration;
+
+import org.eclipse.jdt.internal.corext.dom.fragments.ASTFragmentFactory;
+import org.eclipse.jdt.internal.corext.dom.fragments.IASTFragment;
 import org.eclipse.jdt.internal.corext.refactoring.RefactoringAvailabilityTester;
 import org.eclipse.jdt.internal.corext.refactoring.code.ExtractConstantRefactoring;
+import org.eclipse.jdt.internal.corext.refactoring.code.PromoteTempToFieldRefactoring;
+import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
+import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 
 import org.eclipse.jdt.ui.refactoring.RefactoringSaveHelper;
 
 import org.eclipse.jdt.internal.ui.IJavaHelpContextIds;
+import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.actions.ActionUtil;
 import org.eclipse.jdt.internal.ui.actions.SelectionConverter;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaEditor;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaTextSelection;
 import org.eclipse.jdt.internal.ui.refactoring.ExtractConstantWizard;
+import org.eclipse.jdt.internal.ui.refactoring.PromoteTempWizard;
 import org.eclipse.jdt.internal.ui.refactoring.RefactoringMessages;
 import org.eclipse.jdt.internal.ui.refactoring.actions.RefactoringStarter;
 
@@ -84,7 +100,30 @@ public class ExtractConstantAction extends SelectionDispatchAction {
 	public void run(ITextSelection selection) {
 		if (!ActionUtil.isEditable(fEditor))
 			return;
-		ExtractConstantRefactoring refactoring= new ExtractConstantRefactoring(SelectionConverter.getInputAsCompilationUnit(fEditor), selection.getOffset(), selection.getLength());
+		ICompilationUnit unit= SelectionConverter.getInputAsCompilationUnit(fEditor);
+		CompilationUnit cuNode= RefactoringASTParser.parseWithASTProvider(unit, true, null);
+		int selectionStart= selection.getOffset();
+		int selectionLength= selection.getLength();
+		ExtractConstantRefactoring refactoring= new ExtractConstantRefactoring(cuNode, selectionStart, selectionLength);
+		try {
+			CompilationUnitRewrite cuRewrite= new CompilationUnitRewrite(unit, cuNode);
+			SourceRange range= new SourceRange(selectionStart, selectionLength);
+			IASTFragment ast= ASTFragmentFactory.createFragmentForSourceRange(range, cuRewrite.getRoot(), unit);
+			ASTNode node= ast.getAssociatedNode();
+			if (node instanceof SimpleName && node.getParent() instanceof VariableDeclaration) {
+				ICompilationUnit cunit= SelectionConverter.getInputAsCompilationUnit(fEditor);
+				PromoteTempToFieldRefactoring refactoring2= new PromoteTempToFieldRefactoring(cunit, selection.getOffset(), selection.getLength());
+				refactoring2.setInitializeIn(PromoteTempToFieldRefactoring.INITIALIZE_IN_FIELD);
+				refactoring2.setDeclareFinal(true);
+				refactoring2.setDeclareStatic(true);
+				refactoring2.setFieldName(refactoring.guessConstantName());
+				refactoring2.setSelfInitializing(true);
+				new RefactoringStarter().activate(new PromoteTempWizard(refactoring2), getShell(), RefactoringMessages.ConvertLocalToField_title, RefactoringSaveHelper.SAVE_NOTHING);
+				return;
+			}
+		} catch (JavaModelException e) {
+			JavaPlugin.log(e);
+		}
 		new RefactoringStarter().activate(new ExtractConstantWizard(refactoring), getShell(), RefactoringMessages.ExtractConstantAction_extract_constant, RefactoringSaveHelper.SAVE_NOTHING);
 	}
 }

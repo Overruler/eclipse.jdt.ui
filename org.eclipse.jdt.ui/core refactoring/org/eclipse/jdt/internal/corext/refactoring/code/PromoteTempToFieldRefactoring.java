@@ -6,6 +6,7 @@
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
+ *     Timo Kinnunen - Contribution for bug 432147 - [refactoring] Extract Constant displays error message on name of local variable
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package org.eclipse.jdt.internal.corext.refactoring.code;
@@ -17,20 +18,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
-
-import org.eclipse.text.edits.TextEdit;
-
-import org.eclipse.ltk.core.refactoring.Change;
-import org.eclipse.ltk.core.refactoring.Refactoring;
-import org.eclipse.ltk.core.refactoring.RefactoringChangeDescriptor;
-import org.eclipse.ltk.core.refactoring.RefactoringDescriptor;
-import org.eclipse.ltk.core.refactoring.RefactoringStatus;
-import org.eclipse.ltk.core.refactoring.RefactoringStatusContext;
-
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
@@ -56,6 +46,7 @@ import org.eclipse.jdt.core.dom.IExtendedModifier;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
+import org.eclipse.jdt.core.dom.Initializer;
 import org.eclipse.jdt.core.dom.Javadoc;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
@@ -72,7 +63,6 @@ import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 import org.eclipse.jdt.core.refactoring.IJavaRefactorings;
 import org.eclipse.jdt.core.refactoring.descriptors.ConvertLocalVariableDescriptor;
-
 import org.eclipse.jdt.internal.core.refactoring.descriptors.RefactoringSignatureDescriptorFactory;
 import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.dom.ASTNodeFactory;
@@ -95,13 +85,18 @@ import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.corext.refactoring.util.ResourceUtil;
 import org.eclipse.jdt.internal.corext.util.JdtFlags;
 import org.eclipse.jdt.internal.corext.util.Messages;
-
-import org.eclipse.jdt.ui.CodeGeneration;
-import org.eclipse.jdt.ui.JavaElementLabels;
-
 import org.eclipse.jdt.internal.ui.text.correction.ASTResolving;
 import org.eclipse.jdt.internal.ui.viewsupport.BasicElementLabels;
 import org.eclipse.jdt.internal.ui.viewsupport.BindingLabelProvider;
+import org.eclipse.jdt.ui.CodeGeneration;
+import org.eclipse.jdt.ui.JavaElementLabels;
+import org.eclipse.ltk.core.refactoring.Change;
+import org.eclipse.ltk.core.refactoring.Refactoring;
+import org.eclipse.ltk.core.refactoring.RefactoringChangeDescriptor;
+import org.eclipse.ltk.core.refactoring.RefactoringDescriptor;
+import org.eclipse.ltk.core.refactoring.RefactoringStatus;
+import org.eclipse.ltk.core.refactoring.RefactoringStatusContext;
+import org.eclipse.text.edits.TextEdit;
 
 public class PromoteTempToFieldRefactoring extends Refactoring {
 
@@ -257,7 +252,7 @@ public class PromoteTempToFieldRefactoring extends Refactoring {
 			return  canEnableSettingDeclareInConstructors() && ! tempHasAssignmentsOtherThanInitialization();
 		else if (fInitializeIn == INITIALIZE_IN_FIELD)
 			return  canEnableSettingDeclareInFieldDeclaration() && ! tempHasAssignmentsOtherThanInitialization();
-		else	if (getMethodDeclaration().isConstructor())
+		else	if (isDeclaredInConstructor())
 			return  !tempHasAssignmentsOtherThanInitialization();
 		else
 			return false;
@@ -272,10 +267,18 @@ public class PromoteTempToFieldRefactoring extends Refactoring {
 	public boolean canEnableSettingDeclareInConstructors(){
 		return ! fDeclareStatic &&
 				! fInitializerUsesLocalTypes &&
-				! getMethodDeclaration().isConstructor() &&
+				! isDeclaredInConstructor() &&
 				! isDeclaredInAnonymousClass() &&
 				! isTempDeclaredInStaticMethod() &&
 				tempHasInitializer();
+	}
+
+	private boolean isDeclaredInConstructor() {
+		BodyDeclaration methodDeclaration= getMethodDeclaration();
+		if(methodDeclaration instanceof MethodDeclaration) {
+			return ((MethodDeclaration) methodDeclaration).isConstructor();
+		}
+		return false;
 	}
 
 	public boolean canEnableSettingDeclareInMethod(){
@@ -298,8 +301,8 @@ public class PromoteTempToFieldRefactoring extends Refactoring {
     	return Modifier.isStatic(getMethodDeclaration().getModifiers());
     }
 
-    private MethodDeclaration getMethodDeclaration(){
-    	return (MethodDeclaration)ASTNodes.getParent(fTempDeclarationNode, MethodDeclaration.class);
+    private BodyDeclaration getMethodDeclaration(){
+    	return (BodyDeclaration)ASTNodes.getParent(fTempDeclarationNode, BodyDeclaration.class);
     }
 
     private boolean isDeclaredInAnonymousClass() {
@@ -322,7 +325,7 @@ public class PromoteTempToFieldRefactoring extends Refactoring {
 		if (fTempDeclarationNode == null)
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.PromoteTempToFieldRefactoring_select_declaration);
 
-		if (! Checks.isDeclaredIn(fTempDeclarationNode, MethodDeclaration.class))
+		if (! Checks.isDeclaredIn(fTempDeclarationNode, MethodDeclaration.class) && !Checks.isDeclaredIn(fTempDeclarationNode, Initializer.class) )
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.PromoteTempToFieldRefactoring_only_declared_in_methods);
 
 		if (isMethodParameter())
@@ -401,7 +404,7 @@ public class PromoteTempToFieldRefactoring extends Refactoring {
     	if (initializer == null)
 	        return;
 
-		IMethodBinding declaringMethodBinding= getMethodDeclaration().resolveBinding();
+		IMethodBinding declaringMethodBinding= getMethodBinding();
 		ITypeBinding[] methodTypeParameters= declaringMethodBinding == null ? new ITypeBinding[0] : declaringMethodBinding.getTypeParameters();
 	    LocalTypeAndVariableUsageAnalyzer localTypeAnalyer= new LocalTypeAndVariableUsageAnalyzer(methodTypeParameters);
 	    initializer.accept(localTypeAnalyer);
@@ -417,7 +420,7 @@ public class PromoteTempToFieldRefactoring extends Refactoring {
     	if (binding == null)
     		return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.PromoteTempToFieldRefactoring_cannot_promote);
 
-		IMethodBinding declaringMethodBinding= getMethodDeclaration().resolveBinding();
+		IMethodBinding declaringMethodBinding= getMethodBinding();
 		ITypeBinding[] methodTypeParameters= declaringMethodBinding == null ? new ITypeBinding[0] : declaringMethodBinding.getTypeParameters();
 		LocalTypeAndVariableUsageAnalyzer analyzer= new LocalTypeAndVariableUsageAnalyzer(methodTypeParameters);
 		type.accept(analyzer);
@@ -427,6 +430,11 @@ public class PromoteTempToFieldRefactoring extends Refactoring {
 			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.PromoteTempToFieldRefactoring_uses_type_declared_locally);
 		return null;
     }
+
+	private IMethodBinding getMethodBinding() {
+		BodyDeclaration methodDeclaration= getMethodDeclaration();
+		return methodDeclaration != null && methodDeclaration instanceof MethodDeclaration ? ((MethodDeclaration) methodDeclaration).resolveBinding() : null;
+	}
 
     private VariableDeclarationStatement getTempDeclarationStatement() {
         return (VariableDeclarationStatement) ASTNodes.getParent(fTempDeclarationNode, VariableDeclarationStatement.class);
@@ -982,5 +990,9 @@ public class PromoteTempToFieldRefactoring extends Refactoring {
 
 	public void setLinkedProposalModel(LinkedProposalModel model) {
 		fLinkedProposalModel= model;
+	}
+
+	public void setSelfInitializing(boolean value) {
+		fSelfInitializing = value;
 	}
 }
