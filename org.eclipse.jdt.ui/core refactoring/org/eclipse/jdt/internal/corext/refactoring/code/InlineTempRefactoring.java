@@ -6,6 +6,7 @@
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
+ *     Timo Kinnunen - Contribution for bug 93850 - [inline] Allow inlining of local variable initialized to null.
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package org.eclipse.jdt.internal.corext.refactoring.code;
@@ -209,20 +210,10 @@ public class InlineTempRefactoring extends Refactoring {
 			VariableDeclaration declaration= getVariableDeclaration();
 
 			result.merge(checkSelection(declaration));
-			if (result.hasFatalError())
-				return result;
-
-			result.merge(checkInitializer(declaration));
 			return result;
 		} finally {
 			pm.done();
 		}
-	}
-
-    private RefactoringStatus checkInitializer(VariableDeclaration decl) {
-		if (decl.getInitializer().getNodeType() == ASTNode.NULL_LITERAL)
-			return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.InlineTemRefactoring_error_message_nulLiteralsCannotBeInlined);
-		return null;
 	}
 
 	private RefactoringStatus checkSelection(VariableDeclaration decl) {
