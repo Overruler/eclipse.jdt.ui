@@ -6,6 +6,7 @@
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
+ *     Timo Kinnunen - Contribution for bug 112349 - [extract local] Extract a single null literal
  *     IBM Corporation - initial API and implementation
  *     Nikolay Metchev <nikolaymetchev@gmail.com> - [extract local] Extract to local variable not replacing multiple occurrences in same statement - https://bugs.eclipse.org/406347
  *     Nicolaj Hoess <nicohoess@gmail.com> - [extract local] puts declaration at wrong position - https://bugs.eclipse.org/65875
@@ -76,7 +77,6 @@ import org.eclipse.jdt.core.dom.LambdaExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier.ModifierKeyword;
 import org.eclipse.jdt.core.dom.Name;
-import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.PostfixExpression;
 import org.eclipse.jdt.core.dom.PrefixExpression;
@@ -440,9 +440,7 @@ public class ExtractTempRefactoring extends Refactoring {
 		Expression selectedExpression= getSelectedExpression().getAssociatedExpression();
 		if (selectedExpression != null) {
 			final ASTNode parent= selectedExpression.getParent();
-			if (selectedExpression instanceof NullLiteral) {
-				return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.ExtractTempRefactoring_null_literals);
-			} else if (selectedExpression instanceof ArrayInitializer) {
+			if (selectedExpression instanceof ArrayInitializer) {
 				return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.ExtractTempRefactoring_array_initializer);
 			} else if (selectedExpression instanceof Assignment) {
 				if (parent instanceof Expression && !(parent instanceof ParenthesizedExpression))
