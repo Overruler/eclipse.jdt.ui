@@ -8,6 +8,7 @@
 <!-- http://www.eclipse.org/legal/epl-v10.html                              -->
 <!--                                                                        -->
 <!-- Contributors:                                                          -->
+<!--     Timo Kinnunen <timo.kinnunen@gmail.com> - [preferences] Allow to configure annotation presentation layer - https://bugs.eclipse.org/80089 -->
 <!--     IBM Corporation - initial API and implementation                   -->
 <!--     Francis Upton IV, Oakland Software <francisu@ieee.org> - Add support for Go Into with the ProjectExplorer - https://bugs.eclipse.org/bugs/show_bug.cgi?id=262091 -->
 <!--     Troy Bishop <tjbishop@ca.ibm.com> - Add support for importing/exporting Java Code Style preferences - https://bugs.eclipse.org/bugs/show_bug.cgi?id=304395 -->
@@ -1160,7 +1161,7 @@
             verticalRulerPreferenceValue="false"
             colorPreferenceKey="occurrenceIndicationColor"
             colorPreferenceValue="212,212,212"
-            presentationLayer="4"
+            presentationLayer="7"
             showInNextPrevDropdownToolbarActionKey="showOccurrenceInNextPrevDropdownToolbarAction"
             showInNextPrevDropdownToolbarAction="true"
             isGoToNextNavigationTargetKey="isOccurrenceGoToNextNavigationTarget"
@@ -1183,7 +1184,7 @@
             verticalRulerPreferenceValue="false"
             colorPreferenceKey="writeOccurrenceIndicationColor"
             colorPreferenceValue="240,216,168"
-            presentationLayer="4"
+            presentationLayer="8"
             textStylePreferenceKey="writeOccurrenceTextStyle"
             textStylePreferenceValue="NONE">
 	  </specification>	  
