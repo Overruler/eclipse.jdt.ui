@@ -1160,7 +1160,7 @@
             verticalRulerPreferenceKey="occurrenceIndicationInVerticalRuler"
             verticalRulerPreferenceValue="false"
             colorPreferenceKey="occurrenceIndicationColor"
-            colorPreferenceValue="212,212,212"
+            colorPreferenceValue="45,123,255"
             presentationLayer="7"
             showInNextPrevDropdownToolbarActionKey="showOccurrenceInNextPrevDropdownToolbarAction"
             showInNextPrevDropdownToolbarAction="true"
@@ -1169,7 +1169,7 @@
             isGoToPreviousNavigationTargetKey="isOccurrenceGoToPreviousNavigationTarget"
 	        isGoToPreviousNavigationTarget="false"
             textStylePreferenceKey="occurrenceTextStyle"
-            textStylePreferenceValue="NONE">
+            textStylePreferenceValue="BOX">
 	  </specification>
 	  <specification
             annotationType="org.eclipse.jdt.ui.occurrences.write"
@@ -1183,10 +1183,10 @@
             verticalRulerPreferenceKey="writeOccurrenceIndicationInVerticalRuler"
             verticalRulerPreferenceValue="false"
             colorPreferenceKey="writeOccurrenceIndicationColor"
-            colorPreferenceValue="240,216,168"
+            colorPreferenceValue="0,190,180"
             presentationLayer="8"
             textStylePreferenceKey="writeOccurrenceTextStyle"
-            textStylePreferenceValue="NONE">
+            textStylePreferenceValue="BOX">
 	  </specification>	  
 	  
 	  <specification
