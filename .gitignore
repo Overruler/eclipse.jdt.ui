@@ -8,3 +8,5 @@ core.*
 Snap.*
 # maven
 /*/target/
+/.project
+/.gitignore
