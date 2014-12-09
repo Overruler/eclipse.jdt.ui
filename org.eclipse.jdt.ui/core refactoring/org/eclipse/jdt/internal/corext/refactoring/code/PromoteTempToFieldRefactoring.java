@@ -18,9 +18,20 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+
+import org.eclipse.text.edits.TextEdit;
+
+import org.eclipse.ltk.core.refactoring.Change;
+import org.eclipse.ltk.core.refactoring.Refactoring;
+import org.eclipse.ltk.core.refactoring.RefactoringChangeDescriptor;
+import org.eclipse.ltk.core.refactoring.RefactoringDescriptor;
+import org.eclipse.ltk.core.refactoring.RefactoringStatus;
+import org.eclipse.ltk.core.refactoring.RefactoringStatusContext;
+
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
@@ -63,6 +74,7 @@ import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 import org.eclipse.jdt.core.refactoring.IJavaRefactorings;
 import org.eclipse.jdt.core.refactoring.descriptors.ConvertLocalVariableDescriptor;
+
 import org.eclipse.jdt.internal.core.refactoring.descriptors.RefactoringSignatureDescriptorFactory;
 import org.eclipse.jdt.internal.corext.codemanipulation.StubUtility;
 import org.eclipse.jdt.internal.corext.dom.ASTNodeFactory;
@@ -85,18 +97,13 @@ import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.corext.refactoring.util.ResourceUtil;
 import org.eclipse.jdt.internal.corext.util.JdtFlags;
 import org.eclipse.jdt.internal.corext.util.Messages;
+
+import org.eclipse.jdt.ui.CodeGeneration;
+import org.eclipse.jdt.ui.JavaElementLabels;
+
 import org.eclipse.jdt.internal.ui.text.correction.ASTResolving;
 import org.eclipse.jdt.internal.ui.viewsupport.BasicElementLabels;
 import org.eclipse.jdt.internal.ui.viewsupport.BindingLabelProvider;
-import org.eclipse.jdt.ui.CodeGeneration;
-import org.eclipse.jdt.ui.JavaElementLabels;
-import org.eclipse.ltk.core.refactoring.Change;
-import org.eclipse.ltk.core.refactoring.Refactoring;
-import org.eclipse.ltk.core.refactoring.RefactoringChangeDescriptor;
-import org.eclipse.ltk.core.refactoring.RefactoringDescriptor;
-import org.eclipse.ltk.core.refactoring.RefactoringStatus;
-import org.eclipse.ltk.core.refactoring.RefactoringStatusContext;
-import org.eclipse.text.edits.TextEdit;
 
 public class PromoteTempToFieldRefactoring extends Refactoring {
 
@@ -121,6 +128,7 @@ public class PromoteTempToFieldRefactoring extends Refactoring {
 	private boolean fDeclareStatic;
 	private boolean fDeclareFinal;
 	private int fInitializeIn; /*see INITIALIZE_IN_* constraints */
+	private boolean fInitializeAsConstantIfPossible= false;
 
 	//------ fields used for computations ---------//
     private CompilationUnit fCompilationUnitNode;
@@ -252,7 +260,7 @@ public class PromoteTempToFieldRefactoring extends Refactoring {
 			return  canEnableSettingDeclareInConstructors() && ! tempHasAssignmentsOtherThanInitialization();
 		else if (fInitializeIn == INITIALIZE_IN_FIELD)
 			return  canEnableSettingDeclareInFieldDeclaration() && ! tempHasAssignmentsOtherThanInitialization();
-		else	if (isDeclaredInConstructor())
+		else if (isDeclaredInConstructor() || isDeclaredInInitializer())
 			return  !tempHasAssignmentsOtherThanInitialization();
 		else
 			return false;
@@ -274,15 +282,20 @@ public class PromoteTempToFieldRefactoring extends Refactoring {
 	}
 
 	private boolean isDeclaredInConstructor() {
-		BodyDeclaration methodDeclaration= getMethodDeclaration();
+		BodyDeclaration methodDeclaration= getBodyDeclaration();
 		if(methodDeclaration instanceof MethodDeclaration) {
 			return ((MethodDeclaration) methodDeclaration).isConstructor();
 		}
 		return false;
 	}
 
+	private boolean isDeclaredInInitializer() {
+		BodyDeclaration initializerDeclaration= getBodyDeclaration();
+		return initializerDeclaration instanceof Initializer;
+	}
+
 	public boolean canEnableSettingDeclareInMethod(){
-		return ! fDeclareFinal &&
+		return (! fDeclareFinal || isDeclaredInInitializer()) &&
 				tempHasInitializer();
 	}
     private boolean tempHasInitializer() {
@@ -298,10 +311,10 @@ public class PromoteTempToFieldRefactoring extends Refactoring {
     }
 
     private boolean isTempDeclaredInStaticMethod() {
-    	return Modifier.isStatic(getMethodDeclaration().getModifiers());
+    	return Modifier.isStatic(getBodyDeclaration().getModifiers());
     }
 
-    private BodyDeclaration getMethodDeclaration(){
+    private BodyDeclaration getBodyDeclaration(){
     	return (BodyDeclaration)ASTNodes.getParent(fTempDeclarationNode, BodyDeclaration.class);
     }
 
@@ -351,14 +364,23 @@ public class PromoteTempToFieldRefactoring extends Refactoring {
 
     private void initializeDefaults() {
         fVisibility= Modifier.PRIVATE;
-        fDeclareStatic= Modifier.isStatic(getMethodDeclaration().getModifiers());
-        fDeclareFinal= false;
-        if (canEnableSettingDeclareInMethod())
-	        fInitializeIn= INITIALIZE_IN_METHOD;
-	    else if (canEnableSettingDeclareInFieldDeclaration())
-	        fInitializeIn= INITIALIZE_IN_FIELD;
-	    else if (canEnableSettingDeclareInConstructors())
-	        fInitializeIn= INITIALIZE_IN_CONSTRUCTOR;
+        fDeclareStatic= Modifier.isStatic(getBodyDeclaration().getModifiers());
+		if (fInitializeAsConstantIfPossible) {
+			if(canEnableSettingDeclareInFieldDeclaration())
+		        fInitializeIn= INITIALIZE_IN_FIELD;
+			else if (canEnableSettingDeclareInMethod())
+		        fInitializeIn= INITIALIZE_IN_METHOD;
+		    else if (canEnableSettingDeclareInConstructors())
+		        fInitializeIn= INITIALIZE_IN_CONSTRUCTOR;
+		} else {
+			if (canEnableSettingDeclareInMethod())
+				fInitializeIn= INITIALIZE_IN_METHOD;
+			else if (canEnableSettingDeclareInFieldDeclaration())
+				fInitializeIn= INITIALIZE_IN_FIELD;
+			else if (canEnableSettingDeclareInConstructors())
+				fInitializeIn= INITIALIZE_IN_CONSTRUCTOR;
+		}
+        fDeclareFinal= fInitializeAsConstantIfPossible && canEnableSettingFinal();
     }
 
 	public String[] guessFieldNames() {
@@ -432,7 +454,7 @@ public class PromoteTempToFieldRefactoring extends Refactoring {
     }
 
 	private IMethodBinding getMethodBinding() {
-		BodyDeclaration methodDeclaration= getMethodDeclaration();
+		BodyDeclaration methodDeclaration= getBodyDeclaration();
 		return methodDeclaration != null && methodDeclaration instanceof MethodDeclaration ? ((MethodDeclaration) methodDeclaration).resolveBinding() : null;
 	}
 
@@ -478,7 +500,7 @@ public class PromoteTempToFieldRefactoring extends Refactoring {
     private RefactoringStatus checkClashesInConstructors() {
 		Assert.isTrue(fInitializeIn == INITIALIZE_IN_CONSTRUCTOR);
 		Assert.isTrue(!isDeclaredInAnonymousClass());
-		final AbstractTypeDeclaration declaration= (AbstractTypeDeclaration) getMethodDeclaration().getParent();
+		final AbstractTypeDeclaration declaration= (AbstractTypeDeclaration) getBodyDeclaration().getParent();
 		if (declaration instanceof TypeDeclaration) {
 			MethodDeclaration[] methods= ((TypeDeclaration) declaration).getMethods();
 			for (int i= 0; i < methods.length; i++) {
@@ -521,7 +543,7 @@ public class PromoteTempToFieldRefactoring extends Refactoring {
     }
 
     private FieldDeclaration[] getFieldDeclarations() {
-    	List<BodyDeclaration> bodyDeclarations= ASTNodes.getBodyDeclarations(getMethodDeclaration().getParent());
+    	List<BodyDeclaration> bodyDeclarations= ASTNodes.getBodyDeclarations(getBodyDeclaration().getParent());
     	List<FieldDeclaration> fields= new ArrayList<FieldDeclaration>(1);
     	for (Iterator<BodyDeclaration> iter= bodyDeclarations.iterator(); iter.hasNext();) {
 	        Object each= iter.next();
@@ -587,7 +609,7 @@ public class PromoteTempToFieldRefactoring extends Refactoring {
 
     private void addInitializersToConstructors(ASTRewrite rewrite) throws CoreException {
     	Assert.isTrue(! isDeclaredInAnonymousClass());
-    	final AbstractTypeDeclaration declaration= (AbstractTypeDeclaration)getMethodDeclaration().getParent();
+    	final AbstractTypeDeclaration declaration= (AbstractTypeDeclaration)getBodyDeclaration().getParent();
     	final MethodDeclaration[] constructors= getAllConstructors(declaration);
     	if (constructors.length == 0) {
     		AST ast= rewrite.getAST();
@@ -829,7 +851,7 @@ public class PromoteTempToFieldRefactoring extends Refactoring {
 
     private void addFieldDeclaration(ASTRewrite rewrite) {
     	FieldDeclaration[] fields= getFieldDeclarations();
-    	ASTNode parent= getMethodDeclaration().getParent();
+    	ASTNode parent= getBodyDeclaration().getParent();
     	ChildListPropertyDescriptor descriptor= ASTNodes.getBodyDeclarationsProperty(parent);
     	int insertIndex;
     	if (fields.length == 0)
@@ -992,7 +1014,7 @@ public class PromoteTempToFieldRefactoring extends Refactoring {
 		fLinkedProposalModel= model;
 	}
 
-	public void setSelfInitializing(boolean value) {
-		fSelfInitializing = value;
+	public void setInitializeAsConstantIfPossible(boolean value) {
+		fInitializeAsConstantIfPossible = value;
 	}
 }

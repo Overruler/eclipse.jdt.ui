@@ -113,11 +113,10 @@ public class ExtractConstantAction extends SelectionDispatchAction {
 			if (node instanceof SimpleName && node.getParent() instanceof VariableDeclaration) {
 				ICompilationUnit cunit= SelectionConverter.getInputAsCompilationUnit(fEditor);
 				PromoteTempToFieldRefactoring refactoring2= new PromoteTempToFieldRefactoring(cunit, selection.getOffset(), selection.getLength());
-				refactoring2.setInitializeIn(PromoteTempToFieldRefactoring.INITIALIZE_IN_FIELD);
 				refactoring2.setDeclareFinal(true);
 				refactoring2.setDeclareStatic(true);
 				refactoring2.setFieldName(refactoring.guessConstantName());
-				refactoring2.setSelfInitializing(true);
+				refactoring2.setInitializeAsConstantIfPossible(true);
 				new RefactoringStarter().activate(new PromoteTempWizard(refactoring2), getShell(), RefactoringMessages.ConvertLocalToField_title, RefactoringSaveHelper.SAVE_NOTHING);
 				return;
 			}
