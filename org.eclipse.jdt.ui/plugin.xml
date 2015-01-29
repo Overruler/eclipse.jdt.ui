@@ -4374,9 +4374,9 @@
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
 
       <key
-            sequence="M1+I"
+            sequence="M3+S"
             contextId="org.eclipse.jdt.ui.javaEditorScope"
-            commandId="org.eclipse.jdt.ui.edit.text.java.indent"
+            commandId="org.eclipse.jdt.ui.edit.text.java.clean.up"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
 	  <key
 	        sequence="M2+M3+O"
@@ -4480,17 +4480,20 @@
             commandId="org.eclipse.jdt.ui.edit.text.java.refactor.quickMenu"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
       <key
-            sequence="M2+M3+R"
+            sequence="F2"
+            contextId="org.eclipse.jdt.ui.javaEditorScope"
             commandId="org.eclipse.jdt.ui.edit.text.java.rename.element"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
       <key
             platform="carbon"
-            sequence="M2+M3+R"
+            sequence="F2"
+            contextId="org.eclipse.jdt.ui.javaEditorScope"
             commandId=""
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
       <key
             platform="carbon"
             sequence="COMMAND+ALT+R"
+            contextId="org.eclipse.jdt.ui.javaEditorScope"
             commandId="org.eclipse.jdt.ui.edit.text.java.rename.element"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
             
@@ -4525,48 +4528,83 @@
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
             
       <key
-            sequence="M2+M3+I"
+            sequence="M1+M2+M3+ARROW_RIGHT"
+            commandId="org.eclipse.jdt.ui.edit.text.java.inline"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
+      <key
+            sequence="M1+I"
             commandId="org.eclipse.jdt.ui.edit.text.java.inline"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
       <key
             platform="carbon"
-            sequence="M2+M3+I"
+            sequence="M1+I"
             commandId=""
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
       <key
             platform="carbon"
-            sequence="COMMAND+ALT+I"
+            sequence="COMMAND+I"
             commandId="org.eclipse.jdt.ui.edit.text.java.inline"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
             
       <key
-            sequence="M2+M3+M"
+            sequence="M1+M"
+            contextId="org.eclipse.jdt.ui.javaEditorScope"
             commandId="org.eclipse.jdt.ui.edit.text.java.extract.method"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
       <key
             platform="carbon"
-            sequence="M2+M3+M"
+            sequence="M1+M"
+            contextId="org.eclipse.jdt.ui.javaEditorScope"
             commandId=""
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
       <key
             platform="carbon"
-            sequence="COMMAND+ALT+M"
+            sequence="COMMAND+M"
+            contextId="org.eclipse.jdt.ui.javaEditorScope"
             commandId="org.eclipse.jdt.ui.edit.text.java.extract.method"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
             
       <key
-            sequence="M2+M3+L"
+            sequence="M1+L"
             commandId="org.eclipse.jdt.ui.edit.text.java.extract.local.variable"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
       <key
             platform="carbon"
-            sequence="M2+M3+L"
+            sequence="M1+L"
             commandId=""
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
       <key
             platform="carbon"
-            sequence="COMMAND+ALT+L"
-            commandId="org.eclipse.jdt.ui.edit.text.java.extract.local.variable"
+            sequence="COMMAND+L"
+            commandId="org.eclipse.jdt.ui.edit.text.java.extract.constant"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
+      <key
+            sequence="M1+K"
+            commandId="org.eclipse.jdt.ui.edit.text.java.extract.constant"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
+      <key
+            platform="carbon"
+            sequence="M1+K"
+            commandId=""
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
+      <key
+            platform="carbon"
+            sequence="COMMAND+K"
+            commandId="org.eclipse.jdt.ui.edit.text.java.extract.constant"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
+      <key
+            sequence="M1+P"
+            commandId="org.eclipse.jdt.ui.edit.text.java.introduce.parameter"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
+      <key
+            platform="carbon"
+            sequence="M1+P"
+            commandId=""
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
+      <key
+            platform="carbon"
+            sequence="COMMAND+P"
+            commandId="org.eclipse.jdt.ui.edit.text.java.introduce.parameter"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"/>
             
 <!-- navigate -->
